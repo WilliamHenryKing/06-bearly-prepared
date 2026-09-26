@@ -1,6 +1,24 @@
 @import "tailwindcss";
-body { background: #f1f2ef; color: #183b32; font-family: system-ui, sans-serif; }
-h1 { font-size: 2rem; font-weight: 700; margin: 1rem 0; }
-p { margin: 1rem 0; }
-button { background: #183b32; color: white; padding: 0.75rem 1rem; cursor: pointer; }
-button:focus-visible { outline: 3px solid #ce6100; outline-offset: 4px; }
+body {
+  background: #f1f2ef;
+  color: #183b32;
+  font-family: system-ui, sans-serif;
+}
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 1rem 0;
+}
+p {
+  margin: 1rem 0;
+}
+button {
+  background: #183b32;
+  color: white;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+}
+button:focus-visible {
+  outline: 3px solid #ce6100;
+  outline-offset: 4px;
+}

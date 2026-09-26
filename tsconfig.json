@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
@@ -17,16 +13,7 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": [
-      "vite/client",
-      "bun"
-    ]
+    "types": ["vite/client", "bun"]
   },
-  "include": [
-    "src",
-    "development",
-    "scripts",
-    "tests",
-    "*.config.ts"
-  ]
+  "include": ["src", "development", "scripts", "tests", "*.config.ts"]
 }

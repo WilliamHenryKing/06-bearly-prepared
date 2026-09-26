@@ -6,10 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": [
-      "**",
-      "!**/bun.lock"
-    ]
+    "includes": ["**", "!**/bun.lock"]
   },
   "formatter": {
     "indentStyle": "space",
@@ -19,7 +16,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "preset": "recommended"
     }
   },
   "css": {
