@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-smoke/
+.vite/
+.env
+.env.*
+!.env.example
+output/
+.playwright-cli/
+*.log
+*.tsbuildinfo
+.DS_Store

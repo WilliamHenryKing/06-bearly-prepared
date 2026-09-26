@@ -1,0 +1,43 @@
+{
+  "name": "bearly-prepared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.10",
+  "engines": {
+    "node": ">=22.12.0",
+    "bun": ">=1.3.10"
+  },
+  "scripts": {
+    "dev": "vite --config vite.smoke.config.ts",
+    "dev:smoke": "vite --config vite.smoke.config.ts",
+    "build": "vite build --config vite.smoke.config.ts",
+    "build:smoke": "vite build --config vite.smoke.config.ts",
+    "preview": "vite preview --config vite.smoke.config.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "check": "bun run typecheck && bun run lint && bun run build:smoke"
+  },
+  "dependencies": {
+    "@gsap/react": "2.1.2",
+    "gsap": "3.15.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "three": "0.186.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/bun": "1.4.2",
+    "@types/node": "26.6.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.186.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "lightningcss": "1.33.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vite": "8.3.0"
+  }
+}
