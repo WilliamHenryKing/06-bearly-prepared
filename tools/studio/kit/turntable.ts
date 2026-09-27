@@ -24,6 +24,7 @@ import {
   WebGLRenderer,
 } from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 
@@ -55,7 +56,10 @@ const holder = new Group();
 scene.add(holder);
 const camera = new PerspectiveCamera(26, 1, 0.01, 1000);
 const silhouetteCamera = new OrthographicCamera(-1, 1, 1, -1, 0.01, 100);
-const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+// Sourced models may be Draco-compressed (NASA 3D Resources are): the project's own three.js
+// ships the decoder.
+const draco = new DRACOLoader().setDecoderPath("/node_modules/three/examples/jsm/libs/draco/gltf/");
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setDRACOLoader(draco);
 
 // Vertex colours carry albedo; _MATERIAL carries roughness, metalness, baked AO and wear.
 const surface = new MeshStandardMaterial({ vertexColors: true });
