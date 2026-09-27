@@ -1,23 +1,45 @@
 # BEARLY PREPARED
 
-Status: planned; isolated development environment. No project artwork or features implemented yet.
+Status: v1 playable. A small felt bear packs far too much for a short hike to a lookout, then
+has exactly the tea that survived the trip. One trail with three authored obstacles (a hairpin,
+log steps and a windy ledge), a six-piece prop set, balance you can read and steer, recoverable
+spills, checkpoint flags and a tea scene built from what arrived. Everything is drawn
+procedurally in code; there are no external assets, network calls or accounts.
 
-Working checkout: `experiences/06-bearly-prepared`. Repository anchor: `.repositories/06-bearly-prepared`. Branch: `work/experience`. Preserve both directories.
+## How to play
+
+1. **Pack.** Tap props to add them to the top of the stack; reorder with ▲ ▼. Heavy and low
+   sways least, tall loads swing wide, and whatever sits on the blanket grips better.
+2. **Walk.** Hold **Walk** (W, ↑ or Space). Let go to stop. Heavier loads walk slower.
+3. **Lean.** Hold **◀ Lean / Lean ▶** (A/← and D/→). Leaning pushes the load that way, so when
+   the gauge tips right, lean left. Green on the gauge means nothing slides; amber means the
+   loosest item is sliding; red is a topple. The bear glances up and reaches for anything that
+   starts to go.
+4. **Obstacles.** The hairpin throws the load outward, each log lurches it toward its low end
+   (the stone shows which), and the ledge gusts on a rhythm: a whistle, a push, a lull. The
+   ledge is narrower, so it topples sooner.
+5. **Spills.** Items that slide off land in the grass. Fetch them for a few seconds each. A
+   topple sends you back to the last flag with the load you had there (+4 s).
+6. **Tea.** At the lookout the bear unpacks what arrived: a neat cup, a respectable picnic or an
+   elaborate little lounge. Missing biscuits receive a moment of silence. Then pack again.
+
+Mouse, touch and keyboard all work; `prefers-reduced-motion` calms the camera, pops and grass.
 
 ## Development
 
-```powershell
+```sh
 bun install --frozen-lockfile
-bun run dev
-bun run check
-bun run preview
+bun run dev      # http://127.0.0.1:4516/
+bun run check    # tsc, Biome, bun test, production build into dist/
+bun run preview  # http://127.0.0.1:4616/
 ```
 
-Development: http://127.0.0.1:4516/
-Preview: http://127.0.0.1:4616/
+Source layout: `src/game/` pure rules (tested in `tests/rules.test.ts`), `src/scene/` three.js
+scene, `src/ui/` React HUD, `src/main.tsx` wiring, `src/loader.ts` arrival veil.
+`development/` and `tools/studio/` are earlier tooling and not part of the app.
 
-The current dev/build scripts run a **development-only smoke harness** in `development/`; output is `dist-smoke/`. It verifies React, Three.js, GSAP and CSS tooling. It is not a portfolio page. Creative production will add the real source and a production build in `dist/`.
+## Credits
 
-Each project owns its dependencies and lockfile. Tailwind uses its Vite plugin; Lightning CSS performs final CSS minification. No shared visual runtime or sibling imports.
-
-Read the collection plan for this project's full creative and completion requirements. Design and asset documents are created when its serial production turn begins. All commercial content will be fictional and local-only.
+All geometry, materials, textures and animation are authored procedurally in this
+repository. Libraries: three.js, React, GSAP, Tailwind CSS (all under their own licences). No
+third-party art assets are used.

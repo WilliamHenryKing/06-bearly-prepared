@@ -44,6 +44,7 @@ export class GameScene {
   private teaTime = -1;
   private seat = 0;
   private silence = false;
+  private hush = 0;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -207,6 +208,10 @@ export class GameScene {
       if (this.silence && this.teaTime > 1.5 && this.teaTime < 6) pose.bow = 1;
       this.tea.update(dt);
     }
+
+    // The world dims a little while the biscuits are mourned.
+    this.hush += (pose.bow - this.hush) * Math.min(1, dt * 2);
+    this.stage.key.intensity = 2.6 - 1.4 * this.hush;
 
     const p = pointAt(this.path, d);
     this.bear.root.position.set(p.x, p.y + (this.teaTime >= 0 ? this.seat * pose.sit : 0), p.z);
