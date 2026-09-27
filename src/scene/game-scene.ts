@@ -211,7 +211,7 @@ export class GameScene {
     const p = pointAt(this.path, d);
     this.bear.root.position.set(p.x, p.y + (this.teaTime >= 0 ? this.seat * pose.sit : 0), p.z);
     this.bear.root.rotation.y = p.heading;
-    this.tea.group.position.set(p.x, p.y, p.z);
+    this.tea.group.position.set(p.x, p.y + 0.02, p.z);
     this.tea.group.rotation.y = p.heading;
     this.bear.update(pose, dt, this.calm);
 

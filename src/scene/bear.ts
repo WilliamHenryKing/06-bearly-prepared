@@ -38,7 +38,7 @@ export const restPose = (): BearPose => ({
 });
 
 export const HIP_HEIGHT = 0.42;
-const LOAD_Z = 0.3;
+const LOAD_Z = 0.36;
 
 const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x = 0, y = 0, z = 0) => {
   const m = new THREE.Mesh(geo, mat);
@@ -182,13 +182,13 @@ export class Bear {
     this.squash = Math.max(0, this.squash - dt * 3);
     const sq = Math.sin(this.squash * Math.PI) * 0.12;
     this.torso.scale.set(1 + sq * 0.5, 1 - sq + breathe, 1 + sq * 0.5);
-    this.torso.rotation.set(0.08 * walk - p.sit * 0.12, 0, -p.lean * 0.24 - p.tilt * 0.25);
+    this.torso.rotation.set(-0.08 * walk + p.sit * 0.12, 0, -p.lean * 0.24 - p.tilt * 0.25);
 
     // Legs walk, or stretch out to sit.
     for (let i = 0; i < 2; i++) {
       const s = i === 0 ? 1 : -1;
       const leg = this.legs[i] as THREE.Group;
-      leg.rotation.set(s * swing * (1 - p.sit) - p.sit * 1.35, 0, (i === 0 ? -1 : 1) * p.sit * 0.2);
+      leg.rotation.set(s * swing * (1 - p.sit) + p.sit * 1.35, 0, (i === 0 ? -1 : 1) * p.sit * 0.2);
     }
 
     // Arms swing; the arm on the falling side reaches up to steady the load.
@@ -197,7 +197,7 @@ export class Bear {
       const reach = Math.max(0, side * p.alarmSide) * p.alarm;
       const arm = this.arms[i] as THREE.Group;
       arm.rotation.set(
-        -(i === 0 ? 1 : -1) * swing * 0.8 * (1 - reach) + reach * 0.6 - p.sit * 0.9,
+        -(i === 0 ? 1 : -1) * swing * 0.8 * (1 - reach) + reach * 0.6 + p.sit * 0.9,
         0,
         side * (0.2 + reach * 2.3 + p.alarm * 0.15),
       );

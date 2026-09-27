@@ -168,7 +168,7 @@ export function buildSky() {
   );
   g.add(dome);
   const ridge = new THREE.MeshStandardMaterial({
-    color: 0x8aa0a8,
+    color: 0x7890a0,
     roughness: 1,
     flatShading: true,
   });

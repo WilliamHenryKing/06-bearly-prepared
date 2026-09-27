@@ -85,7 +85,8 @@ export function Hud({ hud, onFetch }: { hud: HudState; onFetch: (id: ItemId) => 
             {formatTime(hud.time)}
           </span>
         </div>
-        <div className="mt-2 flex flex-col items-center gap-2" aria-live="polite">
+        <TiltMeter tilt={hud.tilt} lean={hud.lean} safe={hud.safe} limit={hud.limit} />
+        <div className="flex flex-col items-center gap-2" aria-live="polite">
           {g && (g.warning || g.strength > 0) && (
             <p className="patch px-4 py-2 text-sm font-extrabold text-sky">
               {g.warning ? "Wind whistling…" : "Gust!"} pushing {g.dir > 0 ? "right ▶" : "◀ left"}
@@ -98,7 +99,7 @@ export function Hud({ hud, onFetch }: { hud: HudState; onFetch: (id: ItemId) => 
       {hud.dropped.length > 0 && (
         <aside
           aria-label="Spilled items"
-          className="pointer-events-auto absolute top-24 left-3 flex flex-col gap-2 sm:top-24 sm:left-4"
+          className="pointer-events-auto absolute inset-x-3 bottom-[108px] flex flex-wrap justify-center gap-2"
         >
           {hud.dropped.map((d) => (
             <button
@@ -118,9 +119,6 @@ export function Hud({ hud, onFetch }: { hud: HudState; onFetch: (id: ItemId) => 
         </aside>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-[104px] flex justify-center sm:bottom-[112px]">
-        <TiltMeter tilt={hud.tilt} lean={hud.lean} safe={hud.safe} limit={hud.limit} />
-      </div>
       <Controls />
     </>
   );

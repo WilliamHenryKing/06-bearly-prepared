@@ -13,6 +13,12 @@ const mesh = (geo: THREE.BufferGeometry, mat: THREE.Material, x = 0, y = 0, z = 
   return m;
 };
 
+/** Lay a ring flat (tori are built upright). */
+const flat = (m: THREE.Mesh) => {
+  m.rotation.x = Math.PI / 2;
+  return m;
+};
+
 const lathe = (pts: [number, number][], segs = 28) =>
   new THREE.LatheGeometry(
     pts.map(([x, y]) => new THREE.Vector2(x, y)),
@@ -84,8 +90,7 @@ function biscuitTin() {
   const g = new THREE.Group();
   g.add(mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.13, 32), blue, 0, 0.065, 0));
   g.add(mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.03, 32), mustard, 0, 0.145, 0));
-  g.add(mesh(new THREE.TorusGeometry(0.151, 0.008, 6, 32), mustard, 0, 0.05, 0)).rotation.x =
-    Math.PI / 2;
+  g.add(flat(mesh(new THREE.TorusGeometry(0.151, 0.008, 6, 32), mustard, 0, 0.05, 0)));
   return g;
 }
 
@@ -131,8 +136,7 @@ function lamp(lit = false) {
   const s = mesh(new THREE.CylinderGeometry(0.1, 0.19, 0.24, 28, 1, true), shadeMat, 0, 0.93, 0);
   shadeMat.side = THREE.DoubleSide;
   g.add(s);
-  g.add(mesh(new THREE.TorusGeometry(0.19, 0.012, 6, 28), felt(0xc84b3c), 0, 0.815, 0)).rotation.x =
-    Math.PI / 2;
+  g.add(flat(mesh(new THREE.TorusGeometry(0.19, 0.012, 6, 28), felt(0xc84b3c), 0, 0.815, 0)));
   return g;
 }
 

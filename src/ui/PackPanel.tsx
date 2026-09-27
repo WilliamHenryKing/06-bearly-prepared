@@ -131,7 +131,7 @@ export function PackPanel({ packed, stats, onToggle, onMove, onStart }: Props) {
       <button
         type="button"
         onClick={onStart}
-        className="wood-btn mt-4 w-full bg-berry py-3 text-lg text-paper hover:bg-berry-dark"
+        className="wood-btn sticky bottom-0 mt-4 w-full bg-berry py-3 text-lg text-paper hover:bg-berry-dark"
       >
         Set off
       </button>

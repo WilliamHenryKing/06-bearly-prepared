@@ -50,7 +50,7 @@ function layout() {
   const h = window.innerHeight;
   scene.stage.resize(w, h);
   const wide = w >= 1024;
-  if (run.phase === "hiking") scene.stage.setShift(0, h < 700 ? 40 : 30);
+  if (run.phase === "hiking") scene.stage.setShift(0, -Math.round(h * 0.05));
   else if (wide) scene.stage.setShift(200, 0);
   else scene.stage.setShift(0, Math.round(h * 0.22));
 }

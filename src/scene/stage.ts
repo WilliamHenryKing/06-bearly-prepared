@@ -25,7 +25,7 @@ export class Stage {
     this.renderer.toneMappingExposure = 1.1;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
     this.scene.fog = new THREE.Fog(0xe9e2cc, 45, 190);
     this.scene.background = new THREE.Color(0xe9e2cc);

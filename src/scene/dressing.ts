@@ -67,18 +67,18 @@ export function buildDressing(ground: Ground, path: readonly PathPoint[], mobile
   const e = new THREE.Euler();
 
   // Grass tufts: three crossed blades per tuft, bending from the root.
-  const blade = new THREE.ConeGeometry(0.05, 0.4, 3, 1, true);
-  blade.translate(0, 0.2, 0);
+  const blade = new THREE.ConeGeometry(0.035, 0.28, 3, 1, true);
+  blade.translate(0, 0.14, 0);
   const tuftGeo = mergeBlades(blade);
   const grassMat = swaying(
-    new THREE.MeshStandardMaterial({ color: 0x8fae4a, roughness: 0.9, side: THREE.DoubleSide }),
+    new THREE.MeshStandardMaterial({ color: 0xa9c25a, roughness: 0.9, side: THREE.DoubleSide }),
   );
-  const tufts = scatter(ground, mobile ? 1600 : 3200, area, (d) => d > 1.05 && d < 22);
+  const tufts = scatter(ground, mobile ? 2200 : 4200, area, (d) => d > 1.05 && d < 22);
   const grass = new THREE.InstancedMesh(tuftGeo, grassMat, tufts.length);
   const tint = new THREE.Color();
   tufts.forEach((t, i) => {
-    const k = 0.7 + rand() * 0.9;
-    m4.compose(p.set(t.x, t.y, t.z), q.identity(), s.set(k, k * (0.7 + rand() * 0.8), k));
+    const k = 0.6 + rand() * 0.6;
+    m4.compose(p.set(t.x, t.y, t.z), q.identity(), s.set(k, k * (0.6 + rand() * 0.7), k));
     grass.setMatrixAt(i, m4);
     grass.setColorAt(i, tint.setHSL(0.2 + rand() * 0.06, 0.45, 0.35 + rand() * 0.15));
   });
@@ -94,7 +94,7 @@ export function buildDressing(ground: Ground, path: readonly PathPoint[], mobile
   );
   const flowerColors = [0xf2d24a, 0xf4f0e6, 0xe07a8a, 0x9a8ae0];
   flowerPts.forEach((f, i) => {
-    m4.compose(p.set(f.x, f.y + 0.2 + rand() * 0.1, f.z), q.identity(), s.set(1, 0.6, 1));
+    m4.compose(p.set(f.x, f.y + 0.12 + rand() * 0.08, f.z), q.identity(), s.set(1, 0.6, 1));
     flowers.setMatrixAt(i, m4);
     flowers.setColorAt(i, tint.set(flowerColors[i % flowerColors.length] as number));
   });
