@@ -315,7 +315,8 @@ export const bend = (n: Node, k: number): Node => {
     const s = Math.sin(k * x);
     return [c * x - s * y, s * x + c * y];
   };
-  const extra = Math.abs(k) * Math.max(Math.abs(n.box[0]), Math.abs(n.box[3])) ** 2;
+  const reach = Math.max(Math.abs(n.box[0]), Math.abs(n.box[3]));
+  const extra = Math.min(Math.abs(k) * reach ** 2, reach);
   return {
     d: (x, y, z) => {
       const [bx, by] = warp(x, y);

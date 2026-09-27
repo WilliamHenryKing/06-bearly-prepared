@@ -5,7 +5,16 @@
 // Output: assets-src/studio/models/<family>/<id>.glb, assets-src/studio/textures/<id>/,
 // and assets-src/studio/index.json (read by the turntable renderer).
 import { execFileSync, spawn } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { meshNode, toGlb } from "./mesh";
@@ -22,6 +31,8 @@ export type Family = {
   keep?: number;
   hero?: boolean;
   silhouette?: boolean;
+  /** Turntable camera elevation in degrees (default 20; flat things want 55–70). */
+  elevation?: number;
   wear?: number;
   dirt?: number;
   build: (seed: number, index: number) => Node;
@@ -95,6 +106,7 @@ async function work(worker: number, of: number) {
             bytes: statSync(final).size,
             hero: !!family.hero,
             silhouette: !!family.silhouette,
+            elevation: family.elevation ?? 20,
             seconds: Math.round((performance.now() - started) / 100) / 10,
           })}\n`,
         );
@@ -117,6 +129,20 @@ async function work(worker: number, of: number) {
     }
   }
 }
+
+// --fresh: rebuild the selected families from scratch (removes their models and renders).
+if (args.includes("--fresh") && !args.includes("--worker"))
+  for (const family of recipes.families)
+    if (!only || only.includes(family.id))
+      for (const dir of ["models", "renders"]) {
+        rmSync(path.join(out, dir, family.id), { recursive: true, force: true });
+        for (const extra of ["turntables", "silhouettes"]) {
+          const folder = path.join(out, extra);
+          if (!existsSync(folder)) continue;
+          for (const name of readdirSync(folder))
+            if (name.startsWith(`${family.id}-`)) rmSync(path.join(folder, name), { recursive: true, force: true });
+        }
+      }
 
 if (args.includes("--worker")) {
   await work(Number(flag("--worker")), Number(flag("--of")));

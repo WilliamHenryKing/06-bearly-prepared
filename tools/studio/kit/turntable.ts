@@ -92,7 +92,8 @@ async function load(url: string) {
   const model = gltf.scene;
   model.traverse((o) => {
     if (o instanceof Mesh) {
-      o.material = surface;
+      // Studio meshes carry their surface in attributes; sourced models keep their own materials.
+      if (o.geometry.getAttribute("_material")) o.material = surface;
       o.castShadow = true;
       o.receiveShadow = true;
     }

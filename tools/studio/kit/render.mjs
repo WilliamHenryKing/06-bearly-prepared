@@ -87,7 +87,11 @@ try {
       await page.evaluate(async (file) => await window.__STUDIO__.load(file), item.file);
       if (!existsSync(done)) {
         for (let v = 0; v < views.length; v++) {
-          const [frame] = await page.evaluate((o) => window.__STUDIO__.render(o), { angles: [views[v]], size: size * 2 });
+          const [frame] = await page.evaluate((o) => window.__STUDIO__.render(o), {
+            angles: [views[v]],
+            size: size * 2,
+            elevation: item.elevation ?? 20,
+          });
           save(frame, path.join(dir, `v${v}.webp`), size);
         }
       }
