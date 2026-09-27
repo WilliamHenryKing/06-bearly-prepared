@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans:
+    ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-paper: #f6eedb;
+  --color-paper-2: #efe2c4;
+  --color-ink: #3a2a1e;
+  --color-ink-soft: #6b5440;
+  --color-berry: #c84b3c;
+  --color-berry-dark: #9e3529;
+  --color-mustard: #d9a441;
+  --color-moss: #4f7a58;
+  --color-sky: #2f6f8a;
+  --color-stitch: #b98a5a;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #e9e2cc;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* A felt patch: warm paper with a stitched edge. */
+.patch {
+  background: var(--color-paper);
+  border-radius: 20px;
+  box-shadow:
+    0 0 0 3px var(--color-paper),
+    0 10px 30px rgb(58 42 30 / 0.25);
+  outline: 2px dashed var(--color-stitch);
+  outline-offset: -8px;
+}
+
+.wood-btn {
+  border-radius: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow:
+    inset 0 -4px 0 rgb(0 0 0 / 0.18),
+    0 3px 0 rgb(58 42 30 / 0.35);
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
+}
+.wood-btn:active,
+.wood-btn[data-held="true"] {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 -2px 0 rgb(0 0 0 / 0.18),
+    0 1px 0 rgb(58 42 30 / 0.35);
+}
+
+:focus-visible {
+  outline: 3px solid #1f5f7a;
+  outline-offset: 3px;
+}
+
+@keyframes nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(var(--nudge, -6px));
+  }
+}
+.nudge {
+  animation: nudge 0.5s ease-in-out infinite;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.45s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nudge,
+  .rise {
+    animation: none;
+  }
+  .wood-btn {
+    transition: none;
+  }
+}
