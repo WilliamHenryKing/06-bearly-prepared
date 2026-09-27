@@ -46,16 +46,19 @@ const bear: Build = (seed) => {
   const fur = mat(pick(r, FUR), 0.95);
   const muzzle = mat(0xe3c9a0, 0.9);
   const nose = mat(0x2a1f1a, 0.4);
-  const chub = range(r, 0.85, 1.35);
-  const h = range(r, 0.8, 1.1);
+  // Proportion studies pushed wide on purpose: head, belly, legs and ears all vary.
+  const chub = range(r, 0.75, 1.6);
+  const h = range(r, 0.7, 1.25);
   const body = move(ellipsoid(0.32 * chub, 0.38 * h, 0.27 * chub, fur), [0, 0.55 * h, 0]);
   const belly = move(ellipsoid(0.22 * chub, 0.26 * h, 0.1, muzzle), [0, 0.5 * h, 0.2 * chub]);
   const headY = 0.55 * h + 0.38 * h + range(r, 0.12, 0.2);
-  const headR = range(r, 0.2, 0.27);
+  const headR = range(r, 0.17, 0.34);
   const head = move(sphere(headR, fur), [0, headY, 0.02]);
   const snout = move(ellipsoid(headR * 0.45, headR * 0.35, headR * 0.5, muzzle), [0, headY - headR * 0.2, headR * 0.85]);
   const noseN = move(sphere(headR * 0.14, nose), [0, headY - headR * 0.08, headR * 1.3]);
-  const ears = mirrorX(move(sphere(headR * 0.32, fur), [headR * 0.7, headY + headR * 0.72, -0.02]));
+  const earSize = range(r, 0.24, 0.42);
+  const earTilt = range(r, 0.55, 0.9);
+  const ears = mirrorX(move(sphere(headR * earSize, fur), [headR * earTilt, headY + headR * (1.25 - earTilt * 0.7), -0.02]));
   const eyes = mirrorX(move(sphere(headR * 0.07, nose), [headR * 0.38, headY + headR * 0.15, headR * 0.86]));
   const arms = mirrorX(capsule([0.26 * chub, 0.72 * h, 0.05], [0.36 * chub + range(r, 0, 0.1), 0.42 * h, 0.12], 0.08, 0.075, fur));
   const legs = mirrorX(capsule([0.14 * chub, 0.3 * h, 0.02], [0.17 * chub, 0.08, 0.08], 0.1, 0.1, fur));
