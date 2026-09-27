@@ -1,4 +1,6 @@
 import { createRoot } from "react-dom/client";
+import { SoundCues } from "./audio/cues";
+import { sound } from "./audio/sound";
 import type { ItemId } from "./game/items";
 import {
   createRun,
@@ -35,6 +37,16 @@ let run: RunState = createRun();
 let outcome: TeaOutcome | null = null;
 let hintOpen = false;
 let hudDirty = true;
+const cues = new SoundCues();
+scene.onSpillLand = (id) => cues.land(id);
+
+// Audio starts on the first gesture; M toggles mute anywhere.
+const unlock = () => sound.unlock();
+window.addEventListener("pointerdown", unlock, { capture: true });
+window.addEventListener("keydown", (e) => {
+  unlock();
+  if (e.code === "KeyM" && !e.repeat && !e.metaKey && !e.ctrlKey) sound.toggleMuted();
+});
 
 const LINES: Partial<Record<ItemId, string>> = {
   biscuits: "The biscuits tumble into the grass.",
@@ -57,16 +69,21 @@ function layout() {
 
 const actions: Actions = {
   toggle(id) {
+    const adding = !run.packed.includes(id);
     togglePack(run, id);
+    if (adding) sound.play(id, { gain: 0.6 });
+    else sound.play("ui-back", { gain: 0.6 });
     hudDirty = true;
   },
   move(i, dir) {
     movePacked(run, i, dir);
+    sound.play("ui-tick", { gain: 0.7 });
     hudDirty = true;
   },
   start() {
     startHike(run);
     releaseAll();
+    sound.play("jingle-start", { gain: 0.6 });
     hintOpen = !hasSeenHint();
     layout();
     hudDirty = true;
@@ -80,12 +97,15 @@ const actions: Actions = {
     run = createRun(packed);
     outcome = null;
     scene.reset();
+    cues.reset();
+    sound.play("ui-select", { gain: 0.7 });
     layout();
     hudDirty = true;
   },
   closeHint() {
     hintOpen = false;
     markHintSeen();
+    sound.play("ui-confirm", { gain: 0.6 });
     hudDirty = true;
   },
 };
@@ -116,6 +136,7 @@ function tick(now: number) {
     const events = drainEvents(run);
     if (events.length) hudDirty = true;
     scene.handle(events, run);
+    cues.events(events, run);
     for (const e of events) {
       if (e.type === "drop") showToast(LINES[e.id] ?? "Something fell off.");
       else if (e.type === "topple") showToast("Oof. Back to the last flag (+4 s).");
@@ -123,13 +144,14 @@ function tick(now: number) {
         showToast("Flag reached: your load is saved here.");
       else if (e.type === "arrive") {
         outcome = teaOutcome(run.packed, run.stack);
-        scene.arrive(outcome);
+        cues.arrive(scene.arrive(outcome), outcome);
         releaseAll();
         layout();
       }
     }
   }
   scene.frame(run, dt);
+  cues.frame(run, dt, hintOpen);
   sinceHud += dt;
   if (hudDirty || sinceHud > 1 / 15) {
     publish(snapshot(run, outcome, hintOpen));

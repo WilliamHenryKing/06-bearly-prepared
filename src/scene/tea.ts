@@ -32,6 +32,8 @@ export class TeaScene {
   private steam: THREE.Mesh[] = [];
   private lampLight: THREE.PointLight | null = null;
   private time = 0;
+  /** When each unpacked piece appears, for the sound of it landing. */
+  pops: { id: ItemId; delay: number }[] = [];
 
   clear() {
     gsap.killTweensOf(this.group.children.map((c) => c.scale));
@@ -51,6 +53,7 @@ export class TeaScene {
         const o = slot.make();
         o.position.set(...slot.at);
         o.rotation.y = slot.turn ?? 0;
+        o.userData.item = id;
         pieces.push(o);
       }
     }
@@ -58,6 +61,7 @@ export class TeaScene {
     if (has("biscuits") || outcome.silence) {
       const p = plate(has("biscuits"));
       p.position.set(-0.15, 0.02, -0.95);
+      p.userData.item = has("biscuits") ? "biscuits" : "teacups";
       pieces.push(p);
     }
     if (has("lamp")) {
@@ -79,6 +83,10 @@ export class TeaScene {
         this.group.add(m);
       }
     }
+    this.pops = pieces.map((o, i) => ({
+      id: o.userData.item as ItemId,
+      delay: calm ? 0.3 + i * 0.12 : 0.6 + i * 0.28,
+    }));
     pieces.forEach((o, i) => {
       o.traverse((c) => {
         c.castShadow = true;

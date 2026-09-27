@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import type { ItemId } from "../game/items";
 import { Hint } from "./Hint";
 import { Hud } from "./Hud";
+import { MuteButton } from "./MuteButton";
 import { PackPanel } from "./PackPanel";
 import { store } from "./store";
 import { TeaCard } from "./TeaCard";
@@ -34,6 +35,7 @@ export function App({ actions }: { actions: Actions }) {
       {hud.phase === "tea" && hud.outcome && (
         <TeaCard outcome={hud.outcome} time={hud.time} onReplay={actions.replay} />
       )}
+      <MuteButton />
     </main>
   );
 }

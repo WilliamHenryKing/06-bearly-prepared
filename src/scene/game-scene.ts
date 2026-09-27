@@ -113,6 +113,11 @@ export class GameScene {
     }
   }
 
+  set onSpillLand(fn: (id: ItemId) => void) {
+    this.spills.onLand = fn;
+  }
+
+  /** Lays out the tea; returns when each piece appears. */
   arrive(outcome: TeaOutcome) {
     this.seat = this.tea.build(outcome, this.calm);
     this.silence = outcome.silence;
@@ -120,6 +125,7 @@ export class GameScene {
     this.bear.load.visible = false;
     for (const m of this.stackMeshes.values()) this.bear.load.remove(m);
     this.stackMeshes.clear();
+    return this.tea.pops;
   }
 
   private rightAt(d: number) {

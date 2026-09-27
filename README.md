@@ -38,8 +38,29 @@ Source layout: `src/game/` pure rules (tested in `tests/rules.test.ts`), `src/sc
 scene, `src/ui/` React HUD, `src/main.tsx` wiring, `src/loader.ts` arrival veil.
 `development/` and `tools/studio/` are earlier tooling and not part of the app.
 
+## Sound
+
+Music, ambience and effects start on the first tap or key press. The speaker button (top
+left) or **M** mutes and is remembered. Audio suspends while the tab is hidden and ducks while
+the hint is open. Footsteps follow the walk cycle, the load creaks when something starts to
+slide, every spill thumps into the grass with its own material, wind swells before each gust
+on the ledge, and the tea is unpacked piece by piece before the kettle whistles (the whistle is
+synthesised with Web Audio). About 0.95 MB of MP3 in `public/audio/`.
+
 ## Credits
 
 All geometry, materials, textures and animation are authored procedurally in this
 repository. Libraries: three.js, React, GSAP, Tailwind CSS (all under their own licences). No
 third-party art assets are used.
+
+Audio (all CC0 1.0, https://creativecommons.org/publicdomain/zero/1.0/; trimmed, looped and
+re-encoded to MP3 for this project):
+
+| Files in `public/audio/` | Source | Author | Licence |
+| --- | --- | --- | --- |
+| `step-*`, `kettle-*`, `teacups-*`, `biscuits-*`, `blanket-*`, `chair-*`, `lamp-*`, `log-*`, `topple-*` | [Impact Sounds](https://kenney.nl/assets/impact-sounds) | Kenney (kenney.nl) | CC0 |
+| `creak-*`, `cloth-*` | [RPG Audio](https://kenney.nl/assets/rpg-audio) | Kenney (kenney.nl) | CC0 |
+| `ui-*`, `flag-0`, `silence-0` | [Interface Sounds](https://kenney.nl/assets/interface-sounds) | Kenney (kenney.nl) | CC0 |
+| `jingle-start`, `jingle-tea` | [Music Jingles](https://kenney.nl/assets/music-jingles) (Pizzicato 10 and 03) | Kenney (kenney.nl) | CC0 |
+| `music-picnic` | [Children's Game Music 1 – Picnic](https://opengameart.org/content/childrens-game-music-1-picnic) | heartade | CC0 |
+| `amb-birds`, `amb-wind` | [Park ambiences](https://opengameart.org/content/park-ambiences) (birds, wind) | Thimras | CC0 |

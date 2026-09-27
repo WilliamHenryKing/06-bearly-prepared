@@ -46,7 +46,7 @@ export function Hud({ hud, onFetch }: { hud: HudState; onFetch: (id: ItemId) => 
   const g = hud.gust;
   return (
     <>
-      <header className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 p-3 pt-[max(12px,env(safe-area-inset-top))]">
+      <header className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 p-3 pt-[max(12px,env(safe-area-inset-top))] pl-16 md:pl-3">
         <div className="patch flex w-full max-w-[560px] items-center gap-3 px-4 py-2">
           <span className="w-24 text-xs font-extrabold sm:w-28 sm:text-sm">
             {ZONE_NAMES[hud.zone]}

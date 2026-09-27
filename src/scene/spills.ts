@@ -25,6 +25,9 @@ export class Spills {
     roughness: 1,
   });
 
+  /** Called when a spilled item first hits the ground. */
+  onLand: (id: ItemId) => void = () => {};
+
   constructor(private ground: Ground) {}
 
   /** Detach an item from the stack (keeping its world transform) and throw it sideways. */
@@ -80,6 +83,7 @@ export class Spills {
       if (f.obj.position.y <= floor && f.vel.y < 0) {
         f.obj.position.y = floor;
         f.bounces++;
+        if (f.bounces === 1) this.onLand(f.id);
         this.puff(f.obj.position, f.bounces === 1 ? 7 : 3);
         f.vel.multiplyScalar(0.35);
         f.vel.y = Math.abs(f.vel.y) + (f.bounces < 3 ? 1.2 / f.bounces : 0);
