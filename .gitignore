@@ -10,3 +10,4 @@ output/
 *.log
 *.tsbuildinfo
 .DS_Store
+assets-src/studio/
