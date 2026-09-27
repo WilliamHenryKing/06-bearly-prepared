@@ -123,7 +123,7 @@ const prop: Build = (seed, index) => PROPS[index % PROPS.length]?.(rng(seed)) as
 export const project = { id: "06-bearly-prepared", name: "BEARLY PREPARED", background: 0x3a3226 };
 export const families: Recipes["families"] = [
   { id: "bear-study", count: 24, voxel: 0.008, keep: 0.25, hero: true, wear: 0.15, dirt: 0.4, build: bear },
-  { id: "camp-prop", count: 48, voxel: 0.004, keep: 0.3, build: prop },
+  { id: "camp-prop", count: 96, voxel: 0.004, keep: 0.3, build: prop },
 ];
 export const textures: Recipes["textures"] = [
   { id: "felt-fur", ramp: [0x5a3a22, 0x8a5a34, 0xa06a3e], layers: [{ kind: "fbm", scale: 96, octaves: 3 }, { kind: "fibres", scale: 128, stretch: 2, weight: 0.5 }], roughness: [0.9, 1], normal: 1.5 },
