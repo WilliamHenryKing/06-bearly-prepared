@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'if [ \"$CLAUDE_CODE_REMOTE\" != \"true\" ]; then exit 0; fi; command -v bun >/dev/null || npm install -g bun@1.3.10; bun install --frozen-lockfile'"
+          }
+        ]
+      }
+    ]
+  }
+}

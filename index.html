@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>BEARLY PREPARED</title>
+    <meta name="description" content="Pack and balance an absurd load on a bear's short hike" />
+    <style>
+      /* Arrival veil: shown until worldReady() in src/loader.ts lifts it. Restyle to the art direction. */
+      #arrival { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; align-content: center; gap: 18px; background: #0d0f14; color: #f2efe6; font: 600 13px/1.2 system-ui, sans-serif; letter-spacing: 0.2em; text-transform: uppercase; transition: opacity 0.6s ease, visibility 0.6s; }
+      #arrival.is-done { opacity: 0; visibility: hidden; }
+      #arrival .bar { width: 140px; height: 2px; background: #ffffff22; overflow: hidden; }
+      #arrival .bar i { display: block; height: 100%; width: 40%; background: currentColor; animation: arrival-slide 1.2s ease-in-out infinite; }
+      @keyframes arrival-slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+      @media (prefers-reduced-motion: reduce) { #arrival .bar i { animation: none; width: 100%; } }
+    </style>
+  </head>
+  <body>
+    <div id="arrival" role="status" aria-live="polite"><span>BEARLY PREPARED</span><div class="bar"><i></i></div></div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

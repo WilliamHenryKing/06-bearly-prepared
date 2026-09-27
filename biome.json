@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/bun.lock"]
+    "includes": ["**", "!**/bun.lock", "!**/docs/visual", "!**/tools/studio", "!**/dist-smoke"]
   },
   "formatter": {
     "indentStyle": "space",

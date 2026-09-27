@@ -1,0 +1,12 @@
+{
+  // Static assets only (no Worker script): Cloudflare Workers Free, workers.dev address (D13).
+  "name": "06-bearly-prepared",
+  "compatibility_date": "2026-09-27",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "drop-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}
