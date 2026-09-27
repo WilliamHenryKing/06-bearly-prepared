@@ -134,10 +134,10 @@ export function synthesise(recipe: TextureRecipe, size: number) {
       const t = Math.min(1, Math.max(0, ((height[i] as number) - lo) / range));
       const f = t * (ramp.length - 1);
       const k = Math.min(ramp.length - 2, Math.floor(f));
-      const a = ramp[k] as number[];
-      const b = ramp[k + 1] as number[];
+      const [a0 = 0, a1 = 0, a2 = 0] = ramp[k] ?? [];
+      const [b0 = 0, b1 = 0, b2 = 0] = ramp[k + 1] ?? [];
       const w = f - k;
-      colour.set([srgb(a[0] + (b[0] - a[0]) * w), srgb(a[1] + (b[1] - a[1]) * w), srgb(a[2] + (b[2] - a[2]) * w), 255], i * 4);
+      colour.set([srgb(a0 + (b0 - a0) * w), srgb(a1 + (b1 - a1) * w), srgb(a2 + (b2 - a2) * w), 255], i * 4);
       const r = recipe.roughness[0] + (recipe.roughness[1] - recipe.roughness[0]) * (1 - t);
       const rv = Math.round(Math.max(0, Math.min(1, r)) * 255);
       rough.set([255, rv, 0, 255], i * 4); // glTF ORM layout: occlusion, roughness, metalness
