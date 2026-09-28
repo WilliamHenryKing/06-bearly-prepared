@@ -1,12 +1,13 @@
 import { createRun, type RunState, startHike } from "./game/run";
 import { BOOKMARKS } from "./scene/bookmarks";
+import { furUniforms } from "./scene/fur";
 import type { GameScene } from "./scene/game-scene";
 
 // Capture hook for visual evidence (docs/visual). Only installed in dev builds or with ?e2e in
 // the URL. window.__VISUAL_TEST__ exposes: ready, bookmarks, renderer, setBookmark(name),
 // clearBookmark(), freeze(on), settle(frames).
 
-export const visual = { frozen: false, frames: 0 };
+export const visual = { frozen: false, frames: 0, step: 0 };
 const waiters: { n: number; done: () => void }[] = [];
 
 export const visualTestEnabled = () =>
@@ -18,8 +19,14 @@ export interface VisualApi {
   renderer: string;
   setBookmark(name: string): boolean;
   clearBookmark(): void;
+  /** The fur's live wetness uniforms (line, soak, splash, frizz). */
+  wetness(): number[];
+  /** Wet fur for evidence captures: soak line (m), soak, splash, frizz. */
+  setWet(line: number, soak: number, splash?: number, frizz?: number): void;
   freeze(on?: boolean): void;
   settle(frames?: number): Promise<void>;
+  /** While frozen, advance the next frame by dt seconds (films step time deterministically). */
+  step(dt: number): Promise<void>;
 }
 
 export function installVisualTest(scene: GameScene, setRun: (r: RunState) => void): VisualApi {
@@ -43,8 +50,21 @@ export function installVisualTest(scene: GameScene, setRun: (r: RunState) => voi
       setRun(r);
       scene.reset();
       scene.setShot(b);
+      scene.setGaitPhase(1.1);
+      if (b.wet) scene.setWet(...b.wet);
       document.documentElement.classList.add("visual-test");
       return true;
+    },
+    wetness() {
+      return [
+        furUniforms.uWetLine.value,
+        furUniforms.uSoak.value,
+        furUniforms.uSplash.value,
+        furUniforms.uFrizz.value,
+      ];
+    },
+    setWet(line, soak, splash = 0, frizz = 0) {
+      scene.setWet(line, soak, splash, frizz);
     },
     clearBookmark() {
       scene.setShot(null);
@@ -55,6 +75,10 @@ export function installVisualTest(scene: GameScene, setRun: (r: RunState) => voi
     },
     settle(frames = 12) {
       return new Promise((done) => waiters.push({ n: visual.frames + frames, done }));
+    },
+    step(dt) {
+      visual.step = dt;
+      return new Promise((done) => waiters.push({ n: visual.frames + 1, done }));
     },
   };
   (window as unknown as { __VISUAL_TEST__: VisualApi }).__VISUAL_TEST__ = api;

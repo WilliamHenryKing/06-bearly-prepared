@@ -17,8 +17,10 @@ import { Bear, restPose } from "./bear";
 import { type Bookmark, bookmarkCamera } from "./bookmarks";
 import { CameraRig } from "./camera";
 import { buildDressing } from "./dressing";
+import { furUniforms } from "./fur";
 import { Landmarks } from "./landmarks";
 import { PALETTE, provideDetail } from "./materials";
+import { Pond } from "./pond";
 import { buildProp } from "./props";
 import { Spills } from "./spills";
 import { Stage } from "./stage";
@@ -27,6 +29,7 @@ import { buildTerrain, buildTrail, Ground } from "./terrain";
 import { createGroundMaterial } from "./terrain-material";
 import { loadPbrSet, setAnisotropy } from "./textures";
 import { buildVegetation, windUniforms } from "./vegetation";
+import { Wetness } from "./wetness";
 import { WindStreaks } from "./wind";
 
 // Turns the rules' state into the picture each frame: places the bear on the trail, mirrors
@@ -38,7 +41,7 @@ export class GameScene {
   readonly stage: Stage;
   private path: PathPoint[];
   private ground: Ground;
-  private bear = new Bear();
+  private bear: Bear;
   private rig: CameraRig;
   private spills: Spills;
   private tea = new TeaScene();
@@ -58,6 +61,12 @@ export class GameScene {
   private fetchT = -1;
   private landmarks: Landmarks;
   private streaks = new WindStreaks();
+  private pond: Pond;
+  private wetness: Wetness;
+  /** How far the bear has stepped down into the pond (visual only). */
+  private wade = 0;
+  private footfallHandler: ((side: number, strength: number, splash: boolean) => void) | null =
+    null;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -65,8 +74,15 @@ export class GameScene {
     private calm: boolean,
   ) {
     this.stage = new Stage(canvas, mobile);
+    this.bear = new Bear(mobile ? "low" : "high");
     this.path = samplePath();
-    this.ground = new Ground(this.path);
+    this.pond = new Pond(this.path);
+    this.ground = new Ground(this.path, this.pond);
+    this.wetness = new Wetness(this.bear, this.pond);
+    this.bear.onFootfall = (side, strength) => {
+      const splash = this.wetness.footfall(side, strength);
+      this.footfallHandler?.(side, strength, splash);
+    };
     const { scene } = this.stage;
     this.ready = this.load(mobile);
     const dressing = buildDressing(this.path);
@@ -74,6 +90,7 @@ export class GameScene {
     this.flags = dressing.flags;
     this.spills = new Spills(this.ground);
     scene.add(this.spills.group, this.bear.root, this.tea.group);
+    scene.add(this.pond.mesh, this.wetness.droplets.mesh);
     this.landmarks = new Landmarks(this.path);
     scene.add(this.landmarks.group, this.streaks.group);
     this.stage.aoHidden.push(this.streaks.group);
@@ -99,15 +116,35 @@ export class GameScene {
     const ground = createGroundMaterial({ turf, dirt, rock });
     this.stage.scene.add(
       buildTerrain(this.ground, new THREE.Vector2(-18, 24), 150, mobile ? 130 : 180, ground),
-      buildTrail(this.path, TRAIL_LENGTH, dirt),
+      buildTrail(this.path, TRAIL_LENGTH, dirt, this.ground),
+      this.pond.buildPatch((x, z) => this.ground.height(x, z), ground),
       await buildVegetation(this.ground, this.path, mobile),
     );
+    await this.bear.ready;
+    // The fur is too fine for GTAO's G-buffer; the inflated proxy stands in for it there.
+    this.stage.aoHidden.push(...this.bear.furMeshes);
+    this.stage.degradeSteps.push(() => this.bear.thinFur());
+  }
+
+  set onFootfall(fn: (side: number, strength: number, splash: boolean) => void) {
+    this.footfallHandler = fn;
+  }
+
+  set onShake(fn: () => void) {
+    this.wetness.onShake = fn;
+  }
+
+  /** Evidence captures: set how wet the bear is. */
+  setWet(line: number, soak: number, splash = 0, frizz = 0) {
+    this.wetness.set(line, soak, splash, frizz);
   }
 
   /** Back to the trailhead for a new run. */
   reset() {
     this.spills.clear();
     this.tea.clear();
+    this.wetness.reset();
+    this.wade = 0;
     this.flop = null;
     this.teaTime = -1;
     this.silence = false;
@@ -169,6 +206,11 @@ export class GameScene {
     for (const m of this.stackMeshes.values()) this.bear.load.remove(m);
     this.stackMeshes.clear();
     return this.tea.pops;
+  }
+
+  /** Evidence captures: a fixed point in the bear's walk cycle. */
+  setGaitPhase(phase: number) {
+    this.bear.phase = phase;
   }
 
   /** Evidence captures: hold a fixed camera bookmark instead of the follow camera. */
@@ -236,6 +278,7 @@ export class GameScene {
     pose.lean = s.balance.lean;
     pose.sit = 0;
     pose.bow = 0;
+    pose.load = Math.min(1, Math.max(0, (s.stats.mass - 1) / 12));
 
     // Dismay after a spill; a quick turn-and-trot when fetching something back.
     this.react = Math.max(0, this.react - dt * 0.9);
@@ -297,7 +340,15 @@ export class GameScene {
     this.stage.hush(this.hush);
 
     const p = pointAt(this.path, d);
-    this.bear.root.position.set(p.x, p.y + (this.teaTime >= 0 ? this.seat * pose.sit : 0), p.z);
+    // Through the pond the bear walks down the bed and wades (the rules never see the dip).
+    const dip =
+      this.pond.e(p.x, p.z) < 1.2 ? Math.max(0, p.y + 0.007 - this.ground.height(p.x, p.z)) : 0;
+    this.wade += (dip - this.wade) * (dt > 0 ? Math.min(1, dt * 10) : 1);
+    this.bear.root.position.set(
+      p.x,
+      p.y - this.wade + (this.teaTime >= 0 ? this.seat * pose.sit : 0),
+      p.z,
+    );
     this.bear.root.rotation.y = p.heading + pose.turn;
     this.tea.group.position.set(p.x, p.y + 0.02, p.z);
     this.tea.group.rotation.y = p.heading;
@@ -312,6 +363,12 @@ export class GameScene {
     const r = this.rightAt(s.d).multiplyScalar(g.dir * push);
     const w = windUniforms.uWind.value;
     w.set(w.x + (r.x - w.x) * Math.min(1, dt * 6), w.y + (r.z - w.y) * Math.min(1, dt * 6));
+    // The same wind combs the bear's fur, with a light breeze that never quite stops.
+    furUniforms.uTime.value += dt;
+    const breeze = this.calm
+      ? 0
+      : Math.sin(this.clock * 1.7) * 0.06 + Math.sin(this.clock * 4.3) * 0.03;
+    furUniforms.uWind.value.set(w.x * 1.6 + breeze, 0, w.y * 1.6 + breeze * 0.5);
 
     const right = this.rightAt(s.d);
     const rate = onLedge ? (g.warning ? 5 : 1.5) + g.strength * 40 : 0;
@@ -324,6 +381,8 @@ export class GameScene {
     );
     this.landmarks.update(g.dir * (0.15 + g.strength), this.clock, this.calm);
     this.spills.update(dt);
+    this.pond.update(dt);
+    this.wetness.update(dt, pose.speed, onLedge && g.strength > 0.2);
     this.rig.teaTime = Math.max(0, this.teaTime);
     const mode = s.phase === "packing" ? "pack" : s.phase === "tea" ? "tea" : "hike";
     if (this.shot) {

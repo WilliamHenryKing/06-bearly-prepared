@@ -55,6 +55,8 @@ export class Stage {
   readonly bloom: UnrealBloomPass;
   /** Objects GTAO's G-buffer should skip (sky, effects). */
   aoHidden: THREE.Object3D[] = [];
+  /** Extra quality steps between dropping GTAO and dropping resolution (false when spent). */
+  degradeSteps: (() => boolean)[] = [];
   tier: Tier;
   private keyLux: number;
   private shift = { x: 0, y: 0 };
@@ -204,6 +206,7 @@ export class Stage {
       this.ao.enabled = false;
       return true;
     }
+    for (const step of this.degradeSteps) if (step()) return true;
     if (this.pixelRatio > 1) {
       this.pixelRatio = 1;
       this.resize(this.width, this.height);

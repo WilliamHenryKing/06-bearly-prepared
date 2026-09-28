@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { LEDGE, type PathPoint, TRAIL_LENGTH } from "../game/trail";
+import type { Pond } from "./pond";
 import { applySet, type PbrSet } from "./textures";
 
 // Ground shaped around the authored trail: the path is carved flat, hills roll away from it,
@@ -22,12 +23,17 @@ export interface GroundQuery {
   side: number;
   near: PathPoint;
   height: number;
+  /** Elliptical radius from the pond (under 1 is in the water). */
+  pond: number;
 }
 
 export class Ground {
   private coarse: PathPoint[];
 
-  constructor(path: readonly PathPoint[]) {
+  constructor(
+    path: readonly PathPoint[],
+    readonly pond: Pond | null = null,
+  ) {
     this.coarse = path.filter((_, i) => i % 3 === 0);
   }
 
@@ -65,7 +71,9 @@ export class Ground {
     // Past the lookout deck the ground falls away and the valley opens up.
     const view = smooth(TRAIL_LENGTH + 2, TRAIL_LENGTH + 7, near.d);
     if (view > 0) h = h * (1 - view) + (near.y - 9 - Math.max(0, best - 3) * 0.35) * view;
-    return { dist: best, side, near, height: h };
+    const pond = this.pond ? this.pond.e(x, z) : Number.POSITIVE_INFINITY;
+    if (this.pond && pond < 2) h = this.pond.carve(x, z, h);
+    return { dist: best, side, near, height: h, pond };
   }
 
   height(x: number, z: number) {
@@ -89,7 +97,9 @@ export function buildTerrain(
     const x = pos.getX(i) + center.x;
     const z = pos.getZ(i) + center.y;
     const q = ground.query(x, z);
-    pos.setXYZ(i, x, q.height, z);
+    // Under the pond's fine patch the coarse meadow drops out of sight.
+    const hidden = ground.pond?.covers(x, z) ? 0.3 : 0;
+    pos.setXYZ(i, x, q.height - hidden, z);
     const steep = Math.min(1, Math.abs(q.height - q.near.y) / 2.5);
     const onLedge = q.near.d > LEDGE.from - 3 && q.near.d < LEDGE.to + 3 ? 1 : 0;
     const rock = Math.max(onLedge * steep, smooth(4, 12, q.height - q.near.y - q.dist * 0.18));
@@ -104,7 +114,12 @@ export function buildTerrain(
 }
 
 /** The trail: a rocky-dirt ribbon whose edges feather into the dirt verge of the meadow. */
-export function buildTrail(path: readonly PathPoint[], length: number, set: PbrSet) {
+export function buildTrail(
+  path: readonly PathPoint[],
+  length: number,
+  set: PbrSet,
+  ground: Ground | null = null,
+) {
   const pts = path.filter((p) => p.d <= length - 0.6);
   const verts: number[] = [];
   const uvs: number[] = [];
@@ -117,7 +132,12 @@ export function buildTrail(path: readonly PathPoint[], length: number, set: PbrS
     const rx = Math.cos(p.heading);
     const rz = -Math.sin(p.heading);
     for (const a of across) {
-      verts.push(p.x + rx * w * a, p.y + 0.025 + (1 - Math.abs(a)) * 0.012, p.z + rz * w * a);
+      const x = p.x + rx * w * a;
+      const z = p.z + rz * w * a;
+      let y = p.y + 0.025 + (1 - Math.abs(a)) * 0.012;
+      // Through the pond the path runs down the bed and out again.
+      if (ground?.pond && ground.pond.e(x, z) < 1.2) y = Math.min(y, ground.height(x, z) + 0.018);
+      verts.push(x, y, z);
       uvs.push(a * w * 0.45, p.d * 0.45);
       cols.push(1, 1, 1, Math.abs(a) === 1 ? 0 : 1);
     }

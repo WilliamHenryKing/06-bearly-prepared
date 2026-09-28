@@ -61,6 +61,8 @@ interface Spot {
   z: number;
   dist: number;
   d: number;
+  /** Elliptical radius from the pond (under 1 is water). */
+  pond: number;
 }
 
 function scatter(
@@ -75,7 +77,7 @@ function scatter(
     const x = centre.x + (rand() - 0.5) * radius * 2;
     const z = centre.z + (rand() - 0.5) * radius * 2;
     const q = ground.query(x, z);
-    const s = { x, y: q.height, z, dist: q.dist, d: q.near.d };
+    const s = { x, y: q.height, z, dist: q.dist, d: q.near.d, pond: q.pond };
     if (accept(s)) out.push(s);
   }
   return out;
@@ -201,7 +203,7 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
     0.34,
   );
   const tufts = scatter(ground, Math.round(15000 * k), 34, (s) => {
-    if (s.dist < 1.05 || !onTrail(s)) return false;
+    if (s.dist < 1.05 || !onTrail(s) || s.pond < 1.15) return false;
     return rand() < Math.exp(-(s.dist - 1) / 9) + 0.12;
   });
   const grass = instanced(cardClump(0.55, 0.38, 3), grassMat, tufts.length, false);
@@ -210,6 +212,27 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
     grass.setColorAt(i, col.setHSL(0.2 + rand() * 0.06, 0.25 + rand() * 0.25, 0.42 + rand() * 0.2));
   });
   group.add(grass);
+
+  // Reeds round the pond: tall, dark and dense on the far bank, a few standing in the shallows.
+  if (ground.pond) {
+    const pond = ground.pond;
+    const reedSpots = scatter(
+      ground,
+      Math.round(900 * k),
+      7,
+      (s) => s.pond > 0.9 && s.pond < 1.45 && s.dist > 1.7 && rand() < 1.6 - s.pond,
+      { x: pond.centre.x, z: pond.centre.z },
+    );
+    const reeds = instanced(cardClump(0.35, 0.95, 3), grassMat, reedSpots.length, false);
+    reedSpots.forEach((t, i) => {
+      place(reeds, i, { ...t, y: Math.max(t.y, pond.level - 0.25) }, 0.8 + rand() * 0.6, 0, 0.18);
+      reeds.setColorAt(
+        i,
+        col.setHSL(0.19 + rand() * 0.05, 0.3 + rand() * 0.2, 0.3 + rand() * 0.14),
+      );
+    });
+    group.add(reeds);
+  }
 
   // Shrubs: leaf-card domes.
   const shrubMat = swaying(
@@ -227,7 +250,7 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
     ground,
     Math.round(90 * k),
     40,
-    (s) => s.dist > 2.5 && onTrail(s) && offLedgeDrop(s),
+    (s) => s.dist > 2.5 && onTrail(s) && offLedgeDrop(s) && s.pond > 1.5,
   );
   const shrub = instanced(shrubGeo, shrubMat, shrubs.length, true);
   shrubs.forEach((t, i) => {
@@ -242,7 +265,7 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
     ground,
     Math.round(260 * k),
     26,
-    (s) => s.dist > 1.2 && s.dist < 14 && onTrail(s),
+    (s) => s.dist > 1.2 && s.dist < 14 && onTrail(s) && s.pond > 1.25,
   );
   flowerVariants.forEach((v, j) => {
     const mine = spots.filter((_, i) => i % flowerVariants.length === j);
@@ -254,7 +277,12 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
   });
 
   // Scanned mossy rocks: boulders in the meadow, pebbles on the path verges.
-  const rockSpots = scatter(ground, Math.round(70 * k), 40, (s) => s.dist > 1.6 && onTrail(s));
+  const rockSpots = scatter(
+    ground,
+    Math.round(70 * k),
+    40,
+    (s) => s.dist > 1.6 && onTrail(s) && s.pond > 1.3,
+  );
   const pebbles: Spot[] = [];
   for (const pt of path) {
     if (pt.d > TRAIL_LENGTH - 1.5 || rand() > (mobile ? 0.3 : 0.6)) continue;
@@ -262,7 +290,9 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
     const off = side * ((pt.d > LEDGE.from && pt.d < LEDGE.to ? 0.7 : 0.95) + rand() * 0.25);
     const x = pt.x + Math.cos(pt.heading) * off;
     const z = pt.z - Math.sin(pt.heading) * off;
-    pebbles.push({ x, y: Math.max(pt.y, ground.height(x, z)), z, dist: 1, d: pt.d });
+    const q = ground.query(x, z);
+    if (q.pond < 1.25) continue;
+    pebbles.push({ x, y: Math.max(pt.y, q.height), z, dist: 1, d: pt.d, pond: q.pond });
   }
   rocks.forEach((r, j) => {
     const big = rockSpots.filter((_, i) => i % rocks.length === j);
@@ -299,7 +329,7 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
     const x = -18 + Math.cos(a) * r;
     const z = 24 + Math.sin(a) * r;
     const g = ground.query(x, z);
-    if (g.dist > 12) far.push({ x, y: g.height, z, dist: g.dist, d: g.near.d });
+    if (g.dist > 12) far.push({ x, y: g.height, z, dist: g.dist, d: g.near.d, pond: g.pond });
   }
   const all = [...near, ...far];
   variants.forEach((v, j) => {

@@ -18,6 +18,8 @@ export interface Bookmark {
   fov: number;
   /** Suggested capture viewport. */
   viewport: { width: number; height: number; scale: number };
+  /** Wet fur to hold: soak line (m), soak, splash, frizz. */
+  wet?: [number, number, number, number];
 }
 
 const TALL: ItemId[] = ["kettle", "blanket", "teacups", "chair", "lamp"];
@@ -68,6 +70,57 @@ export const BOOKMARKS: Record<string, Bookmark> = {
     look: [3, 0.8, 0.9],
     fov: 45,
     viewport: DESK,
+  },
+  pond: {
+    d: 35.1,
+    load: TALL,
+    tilt: 0.04,
+    eye: [1.7, 0.35, 0.95],
+    look: [0, 0, 0.3],
+    fov: 40,
+    viewport: DESK,
+    wet: [0.34, 1, 0.3, 0],
+  },
+  "pond-top": {
+    d: 35.1,
+    load: TALL,
+    tilt: 0,
+    eye: [2.5, 0.5, 6],
+    look: [0, -0.7, 0],
+    fov: 50,
+    viewport: DESK,
+    wet: [0.34, 1, 0.3, 0],
+  },
+  /** Start of the pond film: walking in from the meadow. */
+  "pond-approach": {
+    d: 30.5,
+    load: ["kettle", "blanket", "teacups"],
+    tilt: 0,
+    eye: [-4, 0.6, 2.4],
+    look: [5, 0, 0.3],
+    fov: 42,
+    viewport: DESK,
+  },
+  /** Climbing out of the pond: a fixed camera on the far bank for the shake and the drips. */
+  "pond-exit": {
+    d: 35.9,
+    load: ["kettle", "blanket", "teacups"],
+    tilt: 0,
+    eye: [3.3, 3.1, 1.75],
+    look: [2.6, 0, 0.55],
+    fov: 36,
+    viewport: DESK,
+    wet: [0.36, 1, 0.3, 0],
+  },
+  wet: {
+    d: 40.6,
+    load: TALL,
+    tilt: 0.05,
+    eye: [1.5, 1.05, 1.05],
+    look: [0, 0, 0.62],
+    fov: 42,
+    viewport: DESK,
+    wet: [0.3, 0.85, 0.25, 0.35],
   },
   "hero-portrait": {
     d: 21,

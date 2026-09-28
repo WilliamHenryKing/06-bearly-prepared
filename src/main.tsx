@@ -40,6 +40,8 @@ let hintOpen = false;
 let hudDirty = true;
 const cues = new SoundCues();
 scene.onSpillLand = (id) => cues.land(id);
+scene.onFootfall = (side, strength, splash) => cues.footfall(side, strength, run, splash);
+scene.onShake = () => cues.shake();
 
 // Audio starts on the first gesture; M toggles mute anywhere.
 const unlock = () => sound.unlock();
@@ -147,7 +149,8 @@ let adaptCooldown = 3;
 function tick(now: number) {
   // Up to 0.1 s per frame keeps the simulation in real time even on slow software rendering.
   const raw = (now - last) / 1000;
-  const dt = visual.frozen ? 0 : Math.min(0.1, raw);
+  const dt = visual.frozen ? visual.step : Math.min(0.1, raw);
+  visual.step = 0;
   last = now;
   if (!visualApi && raw < 1) {
     adaptCooldown -= raw;

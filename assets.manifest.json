@@ -589,7 +589,9 @@
           "sha256": "f3b76076d854633b9adc1f2d9d1f004b8f04af6572c069f46e8bdd2223d87a69"
         }
       ],
-      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
+      "processingSteps": [
+        "Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"
+      ]
     },
     {
       "id": "kenney-rpg-audio",
@@ -620,7 +622,9 @@
           "sha256": "17e5d1d69d3ec5733083ba3674b6cecb29b7bc51461fd7995fd83e8416823033"
         }
       ],
-      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
+      "processingSteps": [
+        "Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"
+      ]
     },
     {
       "id": "kenney-interface-sounds",
@@ -661,7 +665,9 @@
           "sha256": "c0d58bea96ecdb6e60666d26ab655cf4d3658aed296e388fcf89804a81aaeecc"
         }
       ],
-      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
+      "processingSteps": [
+        "Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"
+      ]
     },
     {
       "id": "kenney-music-jingles",
@@ -682,7 +688,9 @@
           "sha256": "62cf9d9e5e53970583181b7b73879f1e875f8d346e21462c985092d2edec1898"
         }
       ],
-      "processingSteps": ["Re-encoded to stereo 96 kb/s MP3"]
+      "processingSteps": [
+        "Re-encoded to stereo 96 kb/s MP3"
+      ]
     },
     {
       "id": "oga-childrens-game-music-picnic",
@@ -698,7 +706,9 @@
           "sha256": "a258e3e747359094ed1a702304b148ebbc58157ea067bdb39df76ef2fb4833f1"
         }
       ],
-      "processingSteps": ["Re-encoded to stereo 80 kb/s MP3, looped"]
+      "processingSteps": [
+        "Re-encoded to stereo 80 kb/s MP3, looped"
+      ]
     },
     {
       "id": "oga-park-ambiences",
@@ -721,6 +731,58 @@
       ],
       "processingSteps": [
         "Segment trimmed, tail crossfaded into head for a seamless loop, mono 48 kb/s MP3"
+      ]
+    },
+    {
+      "id": "opengameart-water-splash-slime-sfx",
+      "title": "40 CC0 water / splash / slime SFX",
+      "sourceUrl": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+      "author": "Rubberduck",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "water-splash-slime-sfx.zip",
+          "sha256": "7cd39abb49d4362a37ba18dc0e454c7dc1d08029d4e5b683149046bc237b2eba"
+        }
+      ],
+      "processing": "tools/audio/build-water.py: splash_02/06/08/14/15 trimmed, mono, peak -4 dBFS, 40 ms fade, 96 kbps MP3 (splash-0..4); loop_water_02 mono, -6 dBFS, 64 kbps (amb-water); shake-0 mixes a 1.1 s burst of loop_rain with four sped-up flutters of Kenney's CC0 cloth-0/1 (RPG Audio, already shipped)",
+      "outputFiles": [
+        {
+          "path": "public/audio/splash-0.mp3",
+          "bytes": 8352,
+          "sha256": "57d8b6a4748d3cb899b1b914f2535b726ce8f42f1a0f0ca5f6e6c36e99ccd3ae"
+        },
+        {
+          "path": "public/audio/splash-1.mp3",
+          "bytes": 5760,
+          "sha256": "28ffa87fca6fbe74fab456db97a7330273ffb8bad914bee6a6e24a828676568e"
+        },
+        {
+          "path": "public/audio/splash-2.mp3",
+          "bytes": 7488,
+          "sha256": "cf76a43724a4e18ddb6704d8a1d6fa3acf1d46cd1bb09430474397f66b0e9a69"
+        },
+        {
+          "path": "public/audio/splash-3.mp3",
+          "bytes": 6912,
+          "sha256": "9272d7b3fa1af9cffa4df9016223af131cd9a1cfc94a9520bfe3d1ae755fe0cd"
+        },
+        {
+          "path": "public/audio/splash-4.mp3",
+          "bytes": 6048,
+          "sha256": "cd4270db1137da138a3f34612d740576330ebdb2a9513d6e5a3e8dd79c548691"
+        },
+        {
+          "path": "public/audio/amb-water.mp3",
+          "bytes": 56448,
+          "sha256": "a107987941ab96ab72f01ee9694b2142e29bb61ad22ba31e2c8a54cb8eba280a"
+        },
+        {
+          "path": "public/audio/shake-0.mp3",
+          "bytes": 14688,
+          "sha256": "ac7b1af6cb83381abe801ac693924245438511d54a9b06e17a5cb860b21e7a35"
+        }
       ]
     }
   ],

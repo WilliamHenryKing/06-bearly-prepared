@@ -1,6 +1,8 @@
 // Captures every camera bookmark from the production preview into docs/visual/captures/<set>/.
 // Usage: bun run build && bun run preview & bun scripts/visual-capture.ts baseline
-// Headless Chromium on SwiftShader; the renderer string is logged to renderer.txt.
+// Headless Chromium on SwiftShader, or installed Chrome on the real GPU with VISUAL_GPU=1; the
+// renderer string is logged to renderer.txt.
+
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "@playwright/test";
 
@@ -24,10 +26,12 @@ const sizes: Record<string, { width: number; height: number; scale: number }> = 
   "hero-portrait": { width: 390, height: 844, scale: 2 },
 };
 
-const browser = await chromium.launch({
-  executablePath: process.env.PLAYWRIGHT_CHROMIUM || undefined,
-  args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
-});
+const browser = process.env.VISUAL_GPU
+  ? await chromium.launch({ channel: "chrome", args: ["--use-angle=d3d11", "--enable-gpu"] })
+  : await chromium.launch({
+      executablePath: process.env.PLAYWRIGHT_CHROMIUM || undefined,
+      args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+    });
 const probe = await browser.newPage();
 await probe.goto(base);
 await probe.waitForFunction(() => (window as Win).__VISUAL_TEST__?.ready === true, null, {
@@ -53,6 +57,8 @@ for (const name of bookmarks) {
     timeout: 600_000,
   });
   page.setDefaultTimeout(600_000);
+  // The arrival veil fades for 0.6 s after the first frame; evidence frames are taken without it.
+  await page.addStyleTag({ content: "#arrival{display:none!important}" });
   await page.evaluate(async (n) => {
     const h = (window as Win).__VISUAL_TEST__ as Hook;
     h.setBookmark(n);

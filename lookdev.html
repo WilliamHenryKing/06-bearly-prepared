@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BEARLY PREPARED look-dev</title>
+    <link rel="icon" href="data:," />
+    <style>
+      html, body { margin: 0; height: 100%; background: #111; overflow: hidden; }
+      canvas { display: block; width: 100vw; height: 100vh; }
+      #hud { position: fixed; left: 8px; bottom: 8px; color: #ddd; font: 12px/1.4 ui-monospace, monospace; background: #0008; padding: 4px 8px; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <!-- Development-only harness (docs/visual): not part of the production build. -->
+    <div id="hud"></div>
+    <script type="module" src="/src/lookdev.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "viewport": [900, 900],
+  "base": { "cam": "full", "refs": "1" },
+  "shots": [
+    { "name": "full-front", "params": { "angle": "25" } },
+    { "name": "full-back", "params": { "angle": "160" } },
+    { "name": "face", "params": { "cam": "face", "angle": "15" } },
+    { "name": "wet-legs", "params": { "angle": "25", "wet": "0.35", "soak": "1" } }
+  ],
+  "sheets": [
+    {
+      "name": "first-look",
+      "shots": ["full-front", "full-back", "face", "wet-legs"],
+      "cols": 4,
+      "width": 420
+    }
+  ]
+}

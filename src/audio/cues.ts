@@ -2,13 +2,13 @@ import type { ItemId } from "../game/items";
 import type { RunEvent, RunState } from "../game/run";
 import type { TeaOutcome } from "../game/tea";
 import { gustAt, LEDGE, TRAIL_LENGTH } from "../game/trail";
+import { POND } from "../scene/pond";
 import { sound } from "./sound";
 
 // Decides what is heard: footsteps from the walk cycle, creaks when the load starts to slide,
 // the thump of every spill, wind that swells before each gust, and the tea being unpacked.
 
 export class SoundCues {
-  private lastStep = 0;
   private lastWorst = 0;
   private creakCool = 0;
   private teaClock = -1;
@@ -17,7 +17,6 @@ export class SoundCues {
   reset() {
     this.teaClock = -1;
     this.silence = false;
-    this.lastStep = 0;
     this.lastWorst = 0;
   }
 
@@ -35,6 +34,30 @@ export class SoundCues {
         sound.play(e.id, { gain: 0.5, delay: 0.35 });
       } else if (e.type === "checkpoint" && e.at > 0) sound.play("flag", { gain: 0.6 });
     }
+  }
+
+  /** A foot lands (from the bear's walk cycle); heavy loads thud lower. */
+  footfall(side: number, strength: number, s: RunState, splash = false) {
+    if (s.phase !== "hiking") return;
+    const deck = s.d > TRAIL_LENGTH - 2;
+    if (splash) {
+      sound.play("splash", {
+        gain: 0.3 + 0.35 * strength,
+        rate: 0.9 + Math.random() * 0.2,
+        pan: side * 0.2,
+      });
+      return;
+    }
+    sound.play(deck ? "step-wood" : "step-grass", {
+      gain: 0.2 + 0.25 * strength,
+      rate: 1.05 - s.stats.wobble * 0.2,
+      pan: side * 0.15,
+    });
+  }
+
+  /** The bear shakes the water off. */
+  shake() {
+    sound.play("shake", { gain: 0.7 });
   }
 
   /** A spilled item hits the grass. */
@@ -56,25 +79,13 @@ export class SoundCues {
     if (this.teaClock >= 0) {
       this.teaClock += dt;
       const hush = this.silence && this.teaClock > 1.3 && this.teaClock < 6;
-      sound.setBeds({ music: hush ? 0 : 0.34, birds: 0.4, wind: 0.08 }, 0.5);
+      sound.setBeds({ music: hush ? 0 : 0.34, birds: 0.4, wind: 0.08, water: 0 }, 0.5);
       return;
     }
     if (s.phase === "packing") {
-      sound.setBeds({ music: 0.3, birds: 0.35, wind: 0.06 });
+      sound.setBeds({ music: 0.3, birds: 0.35, wind: 0.06, water: 0 });
       return;
     }
-
-    // Footsteps land twice per stride; heavy loads thud lower.
-    const step = Math.floor(s.stepPhase / Math.PI);
-    if (step !== this.lastStep && s.speed > 0.15) {
-      const deck = s.d > TRAIL_LENGTH - 2;
-      sound.play(deck ? "step-wood" : "step-grass", {
-        gain: 0.25 + 0.25 * Math.min(1, s.speed / 1.8),
-        rate: 1.05 - s.stats.wobble * 0.2,
-        pan: step % 2 ? 0.15 : -0.15,
-      });
-    }
-    this.lastStep = step;
 
     // The load creaks as soon as something begins to slide.
     this.creakCool = Math.max(0, this.creakCool - dt);
@@ -101,6 +112,8 @@ export class SoundCues {
         music: paused ? 0.12 : onLedge ? 0.2 : 0.28,
         birds: onLedge ? 0.15 : 0.35,
         wind: paused ? wind * 0.4 : wind,
+        // The pond laps louder as the bear nears it and fades once it is well behind.
+        water: 0.55 * Math.max(0, Math.min(1, 1 - (Math.abs(s.d - POND.d) - 2) / 14)),
       },
       0.25,
     );

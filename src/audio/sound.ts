@@ -21,8 +21,17 @@ const BANKS: Record<string, number> = {
   "ui-back": 1,
   "ui-tick": 1,
   "ui-confirm": 1,
+  splash: 5,
+  shake: 1,
 };
-const SINGLES = ["jingle-start", "jingle-tea", "amb-birds", "amb-wind", "music-picnic"];
+const SINGLES = [
+  "jingle-start",
+  "jingle-tea",
+  "amb-birds",
+  "amb-wind",
+  "amb-water",
+  "music-picnic",
+];
 const MUTE_KEY = "bearly-prepared:muted";
 
 export interface PlayOptions {
@@ -36,6 +45,8 @@ export interface BedLevels {
   music: number;
   birds: number;
   wind: number;
+  /** The pond lapping, swelling as the bear nears it. */
+  water: number;
 }
 
 function readMuted() {
@@ -49,10 +60,10 @@ function readMuted() {
 class Sound {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
-  private buses: Record<"music" | "birds" | "wind" | "sfx", GainNode> | null = null;
+  private buses: Record<"music" | "birds" | "wind" | "water" | "sfx", GainNode> | null = null;
   private buffers = new Map<string, AudioBuffer>();
   private listeners = new Set<() => void>();
-  private beds: BedLevels = { music: 0.3, birds: 0.35, wind: 0.1 };
+  private beds: BedLevels = { music: 0.3, birds: 0.35, wind: 0.1, water: 0 };
   muted = readMuted();
 
   subscribe = (l: () => void) => {
@@ -82,7 +93,7 @@ class Sound {
       g.connect(this.master as GainNode);
       return g;
     };
-    this.buses = { music: bus(), birds: bus(), wind: bus(), sfx: bus() };
+    this.buses = { music: bus(), birds: bus(), wind: bus(), water: bus(), sfx: bus() };
     this.buses.sfx.gain.value = 0.9;
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) void ctx.suspend();
@@ -108,6 +119,7 @@ class Sound {
           if (n === "music-picnic") this.loop(n, "music");
           else if (n === "amb-birds") this.loop(n, "birds");
           else if (n === "amb-wind") this.loop(n, "wind");
+          else if (n === "amb-water") this.loop(n, "water");
         } catch {
           // A missing sample just stays silent.
         }
@@ -139,7 +151,7 @@ class Sound {
   private applyBeds(ease: number) {
     if (!this.ctx || !this.buses) return;
     const t = this.ctx.currentTime;
-    for (const k of ["music", "birds", "wind"] as const) {
+    for (const k of ["music", "birds", "wind", "water"] as const) {
       const ready = this.buffers.has(k === "music" ? "music-picnic" : `amb-${k}`);
       this.buses[k].gain.setTargetAtTime(ready ? this.beds[k] : 0, t, ease);
     }

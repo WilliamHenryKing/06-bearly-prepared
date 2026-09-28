@@ -13,3 +13,6 @@ output/
 assets-src/studio/
 test-results/
 playwright-report/
+
+# Downloaded audio sources (reproducible from assets.manifest.json)
+assets-src/audio/

@@ -1,0 +1,159 @@
+{
+  "viewport": [900, 900],
+  "base": {
+    "cam": "full",
+    "refs": "0",
+    "load": "0.3"
+  },
+  "shots": [
+    {
+      "name": "dry",
+      "params": {
+        "angle": "25"
+      }
+    },
+    {
+      "name": "wet-ankles",
+      "params": {
+        "angle": "25",
+        "wet": "0.16",
+        "soak": "1"
+      }
+    },
+    {
+      "name": "wet-knees",
+      "params": {
+        "angle": "25",
+        "wet": "0.34",
+        "soak": "1"
+      }
+    },
+    {
+      "name": "wet-belly",
+      "params": {
+        "angle": "25",
+        "wet": "0.6",
+        "soak": "1"
+      }
+    },
+    {
+      "name": "soaked",
+      "params": {
+        "angle": "25",
+        "wet": "1.6",
+        "soak": "1"
+      }
+    },
+    {
+      "name": "splashed",
+      "params": {
+        "angle": "25",
+        "splash": "0.8"
+      }
+    },
+    {
+      "name": "frizz",
+      "params": {
+        "angle": "25",
+        "frizz": "1"
+      }
+    },
+    {
+      "name": "soaked-face",
+      "params": {
+        "cam": "face",
+        "angle": "15",
+        "wet": "1.6",
+        "soak": "1"
+      }
+    },
+    {
+      "name": "dry-face",
+      "params": {
+        "cam": "face",
+        "angle": "15"
+      }
+    },
+    {
+      "name": "alarm-face",
+      "params": {
+        "cam": "face",
+        "angle": "15",
+        "alarm": "1"
+      }
+    }
+  ],
+  "films": [
+    {
+      "name": "walk-side",
+      "params": {
+        "cam": "profile",
+        "angle": "90",
+        "speed": "1.2",
+        "phase": "0"
+      },
+      "frames": 62,
+      "fps": 60,
+      "strip": 8,
+      "stripWidth": 360,
+      "width": 480
+    },
+    {
+      "name": "run-side",
+      "params": {
+        "cam": "profile",
+        "angle": "90",
+        "speed": "1.9",
+        "load": "0",
+        "phase": "0"
+      },
+      "frames": 50,
+      "fps": 60,
+      "strip": 8,
+      "stripWidth": 360,
+      "width": 480
+    },
+    {
+      "name": "heavy-side",
+      "params": {
+        "cam": "profile",
+        "angle": "90",
+        "speed": "1.2",
+        "load": "1",
+        "phase": "0"
+      },
+      "frames": 62,
+      "fps": 60,
+      "strip": 8,
+      "stripWidth": 360,
+      "width": 480
+    },
+    {
+      "name": "walk-back",
+      "params": {
+        "cam": "back",
+        "speed": "1.4",
+        "phase": "0"
+      },
+      "frames": 90,
+      "fps": 30,
+      "strip": 6,
+      "stripWidth": 330,
+      "width": 480
+    }
+  ],
+  "sheets": [
+    {
+      "name": "wetness",
+      "shots": ["dry", "wet-ankles", "wet-knees", "wet-belly", "soaked", "splashed", "frizz"],
+      "cols": 4,
+      "width": 420
+    },
+    {
+      "name": "faces",
+      "shots": ["dry-face", "alarm-face", "soaked-face"],
+      "cols": 3,
+      "width": 480
+    }
+  ]
+}
