@@ -21,7 +21,8 @@
     "test": "bun test",
     "cloudflare:login": "wrangler login",
     "cloudflare:whoami": "wrangler whoami",
-    "deploy": "bun run check && wrangler deploy"
+    "deploy": "bun run check && wrangler deploy",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@gsap/react": "2.1.2",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
+    "@playwright/test": "1.56.1",
     "@tailwindcss/vite": "4.3.3",
     "@types/bun": "1.4.2",
     "@types/node": "26.6.2",

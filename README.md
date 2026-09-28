@@ -32,7 +32,12 @@ bun install --frozen-lockfile
 bun run dev      # http://127.0.0.1:4516/
 bun run check    # tsc, Biome, bun test, production build into dist/
 bun run preview  # http://127.0.0.1:4616/
+bun run e2e      # Playwright: packs a sensible load and walks it to the lookout
 ```
+
+The end-to-end test builds, serves the preview and drives headless Chromium (SwiftShader is
+fine; about 1.5 min on a GPU, 3–4 min in software). It is kept out of `bun run check` because
+it needs a browser; set `PLAYWRIGHT_CHROMIUM` to point at a specific Chromium binary.
 
 Source layout: `src/game/` pure rules (tested in `tests/rules.test.ts`), `src/scene/` three.js
 scene, `src/ui/` React HUD, `src/main.tsx` wiring, `src/loader.ts` arrival veil.
