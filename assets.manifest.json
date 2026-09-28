@@ -1,0 +1,729 @@
+{
+  "schemaVersion": 1,
+  "project": "06-bearly-prepared",
+  "assets": [
+    {
+      "id": "polyhaven-grass_ground",
+      "title": "grass ground",
+      "sourceUrl": "https://polyhaven.com/a/grass_ground",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-26",
+      "sources": [
+        {
+          "file": "grass_ground_diff_1k.jpg",
+          "sha256": "a79cc5ed65af0f80261b39a383b64a8c5272c5144d724deb43dbc29f0e4cd19b"
+        },
+        {
+          "file": "grass_ground_nor_gl_1k.jpg",
+          "sha256": "7000e2ccd479bb7b66dcdf4faef7b47554324566886314ca620cbf03e274e826"
+        },
+        {
+          "file": "grass_ground_arm_1k.jpg",
+          "sha256": "b8c13e5972827dda6465fc98bbb8b3a0e67215bf8e864c729072fc9c1cc502ef"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/grass_ground/grass_ground_diff.webp",
+          "bytes": 203928,
+          "sha256": "c00c52e517e00fb923f12763fab5068d10c5cad4425928073800eac7941b83bf"
+        },
+        {
+          "path": "public/textures/grass_ground/grass_ground_nor.webp",
+          "bytes": 528142,
+          "sha256": "dd5366cfebe6e2eb82bc6c6bf0750e80ddacaadf63118947562c02877739b046"
+        },
+        {
+          "path": "public/textures/grass_ground/grass_ground_arm.webp",
+          "bytes": 184246,
+          "sha256": "70d1b0378f737e5ae0b1351f1633bbba2880d97e41bc2599af7c536d43473bf3"
+        }
+      ],
+      "processingSteps": [
+        "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
+        "Resized to 1024\u00b2 with Lanczos",
+        "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
+      ],
+      "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
+    },
+    {
+      "id": "polyhaven-rock_face_03",
+      "title": "rock face 03",
+      "sourceUrl": "https://polyhaven.com/a/rock_face_03",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-26",
+      "sources": [
+        {
+          "file": "rock_face_03_diff_2k.jpg",
+          "sha256": "644ee79df7ffbf5f6afc330b64dd3f33794bab8820915fe61ffe0c88ecfd7ece"
+        },
+        {
+          "file": "rock_face_03_nor_gl_2k.jpg",
+          "sha256": "a498cef4ba6191f6959b6d03fb835263c77271948264a289af24497ab7111dec"
+        },
+        {
+          "file": "rock_face_03_arm_2k.jpg",
+          "sha256": "1921303981d12bccf72dd29d8a8daf823f1d9bb60400b447c64757203c1e2dad"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/rock_face_03/rock_face_03_diff.webp",
+          "bytes": 231280,
+          "sha256": "78c8b6cefd0d20c2fecaa162bbe5960dc45471aba47e13139a266bc5c5cfbe15"
+        },
+        {
+          "path": "public/textures/rock_face_03/rock_face_03_nor.webp",
+          "bytes": 421200,
+          "sha256": "5606c476fd7ee618982277b4a51e2d57bad0deedb4a3f3cb11a98fcf5d500fc0"
+        },
+        {
+          "path": "public/textures/rock_face_03/rock_face_03_arm.webp",
+          "bytes": 115066,
+          "sha256": "d7db0a7e2eb450c64e3a209a5ff54036acbce9395e2b4bc6f584997feddd3cd0"
+        }
+      ],
+      "processingSteps": [
+        "Poly Haven 2k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
+        "Resized to 1024\u00b2 with Lanczos",
+        "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
+      ],
+      "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
+    },
+    {
+      "id": "polyhaven-bark_brown_02",
+      "title": "bark brown 02",
+      "sourceUrl": "https://polyhaven.com/a/bark_brown_02",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-26",
+      "sources": [
+        {
+          "file": "bark_brown_02_diff_1k.jpg",
+          "sha256": "920fa0bed0c9d78c1d530e99795113afd532d7db746de440f4a85d7c83ed0f1a"
+        },
+        {
+          "file": "bark_brown_02_nor_gl_1k.jpg",
+          "sha256": "0d5e691e8ad8bcd093a3587887fda2a6b4a948b5708a4f256f7919584c6eb857"
+        },
+        {
+          "file": "bark_brown_02_arm_1k.jpg",
+          "sha256": "6bd86d37b3b9b40cc30a4b661e382ec41fa7463a8b1144ff44708b19fa675af1"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/bark_brown_02/bark_brown_02_diff.webp",
+          "bytes": 278174,
+          "sha256": "d4a6f8ce62f097e82271773680f34c98e9d06c4f0bdfccdb8258f36bb5c005e1"
+        },
+        {
+          "path": "public/textures/bark_brown_02/bark_brown_02_nor.webp",
+          "bytes": 380622,
+          "sha256": "adf3a5e25acfdce771d759a08ff2b1d3eae591e8172a7354e82496dd3d064fff"
+        },
+        {
+          "path": "public/textures/bark_brown_02/bark_brown_02_arm.webp",
+          "bytes": 160332,
+          "sha256": "6acaf0ca818c2205ce7201b31acae31a9d6a2553c456ff54b4bdf175299ad109"
+        }
+      ],
+      "processingSteps": [
+        "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
+        "Resized to 1024\u00b2 with Lanczos",
+        "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
+      ],
+      "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
+    },
+    {
+      "id": "polyhaven-distressed_painted_planks",
+      "title": "distressed painted planks",
+      "sourceUrl": "https://polyhaven.com/a/distressed_painted_planks",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-26",
+      "sources": [
+        {
+          "file": "distressed_painted_planks_diff_1k.jpg",
+          "sha256": "ec8d54700e32d583ec3cd64089de73810de1e177874266fe29e931d33ab5ca1e"
+        },
+        {
+          "file": "distressed_painted_planks_nor_gl_1k.jpg",
+          "sha256": "65372398238b1a4d723e414b195e94900e076fa63d9409c5acc9b55d795abe88"
+        },
+        {
+          "file": "distressed_painted_planks_arm_1k.jpg",
+          "sha256": "10cf35fb0e55ccbf3e4e31f68e8f2d8e4579fe4241bb999669eedbb6b0172722"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/distressed_painted_planks/distressed_painted_planks_diff.webp",
+          "bytes": 23786,
+          "sha256": "91107cf3cfc0dc49f7e90b63a4f48cce7f2e3bafdae60360aa130e58d4581c2f"
+        },
+        {
+          "path": "public/textures/distressed_painted_planks/distressed_painted_planks_nor.webp",
+          "bytes": 44154,
+          "sha256": "139793ff5129c5eead92bf6a356ec91d422afad17695dd80e5ab68444df2e511"
+        },
+        {
+          "path": "public/textures/distressed_painted_planks/distressed_painted_planks_arm.webp",
+          "bytes": 20454,
+          "sha256": "19e00c17147bffcdfcc3be9e0bab90d25f194103223163e900d8834fd53b95fe"
+        }
+      ],
+      "processingSteps": [
+        "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
+        "Resized to 1024\u00b2 with Lanczos",
+        "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
+      ],
+      "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
+    },
+    {
+      "id": "polyhaven-hessian_230",
+      "title": "hessian 230",
+      "sourceUrl": "https://polyhaven.com/a/hessian_230",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-26",
+      "sources": [
+        {
+          "file": "hessian_230_diff_1k.jpg",
+          "sha256": "ef9ac1a0129b6d0f44b6d5beb68db7be7a0adf11e09fe52fd2cdc9370b27d4ba"
+        },
+        {
+          "file": "hessian_230_nor_gl_1k.jpg",
+          "sha256": "6d5a6d23c880dbaae98477ed33dbd5d7c0eeda910a39319aec2d0014892974aa"
+        },
+        {
+          "file": "hessian_230_arm_1k.jpg",
+          "sha256": "963ba03b3583a9dcc3a10181a9042de63aec019ee1a8a89c8be77d33a2f6b691"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/hessian_230/hessian_230_diff.webp",
+          "bytes": 93310,
+          "sha256": "6cb1d7c8c2caa1f60e4b03e1bb1338ba80bae8336d6e47b13b7f91a7f91e6bed"
+        },
+        {
+          "path": "public/textures/hessian_230/hessian_230_nor.webp",
+          "bytes": 102478,
+          "sha256": "0f8a964c2e27584b9d4afaa490ec47773e029d70ea1bca59247bbf2a06679702"
+        },
+        {
+          "path": "public/textures/hessian_230/hessian_230_arm.webp",
+          "bytes": 69708,
+          "sha256": "944305077c4a36bbc72be3b2dd619e6ce83d3130a6fc1597f5bea92975bb1c29"
+        }
+      ],
+      "processingSteps": [
+        "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
+        "Resized to 512\u00b2 with Lanczos",
+        "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
+      ],
+      "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
+    },
+    {
+      "id": "polyhaven-wool_boucle",
+      "title": "wool boucle",
+      "sourceUrl": "https://polyhaven.com/a/wool_boucle",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-26",
+      "sources": [
+        {
+          "file": "wool_boucle_diff_1k.jpg",
+          "sha256": "fee39653b3c78efe89636508f2c10ceb38ecb10c0d735ae8dd4e9935cf26540e"
+        },
+        {
+          "file": "wool_boucle_nor_gl_1k.jpg",
+          "sha256": "2cc13a2be4d0bb942a59a86d613665c0d24ff201560daa4d841cee597af0c752"
+        },
+        {
+          "file": "wool_boucle_arm_1k.jpg",
+          "sha256": "5a46c8ded370471c2f26a698e4b33abcaab59f823ead459b97c52297a096053b"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/wool_boucle/wool_boucle_diff.webp",
+          "bytes": 98988,
+          "sha256": "a6edfe1db62a2952b29e399a0cfb16eda838760b267c28e6dcabb0318fad0796"
+        },
+        {
+          "path": "public/textures/wool_boucle/wool_boucle_nor.webp",
+          "bytes": 96846,
+          "sha256": "68b07fb54b9c4246038a50a37eb95dcba87f789ceaa5c3b7240a3f2af3414c65"
+        },
+        {
+          "path": "public/textures/wool_boucle/wool_boucle_arm.webp",
+          "bytes": 95262,
+          "sha256": "e329da007e71b5b84b742bb7138a97818c30353e6aaf819ee758b2ec6ff0eb66"
+        }
+      ],
+      "processingSteps": [
+        "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
+        "Resized to 512\u00b2 with Lanczos",
+        "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
+      ],
+      "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
+    },
+    {
+      "id": "polyhaven-rocky_trail",
+      "title": "rocky trail",
+      "sourceUrl": "https://polyhaven.com/a/rocky_trail",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "rocky_trail_diff_1k.jpg",
+          "sha256": "7f20d83cd4a67f9c38abf72f39f5a3749a962e90bdc156998be027b1227a5bd6"
+        },
+        {
+          "file": "rocky_trail_nor_gl_1k.jpg",
+          "sha256": "087b8912c8cf40a528965c4282a5b3e4be011da5790273ffcdb5bd2697bde7dd"
+        },
+        {
+          "file": "rocky_trail_arm_1k.jpg",
+          "sha256": "4c1a5a64fad1049a9e9719a9af5f4b9d4eabef5307de81d7828f5170d0c4c172"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/rocky_trail/rocky_trail_diff.webp",
+          "bytes": 319940,
+          "sha256": "6b7801025c847bace7f0eb13ac042829c97bb6a6003dbce6ffc9eb5f204f7d83"
+        },
+        {
+          "path": "public/textures/rocky_trail/rocky_trail_nor.webp",
+          "bytes": 573736,
+          "sha256": "712dfb55dd7192c4bc03dcbb8c498942132a1538f8eb56ac7b2a976a6d1b0988"
+        },
+        {
+          "path": "public/textures/rocky_trail/rocky_trail_arm.webp",
+          "bytes": 286736,
+          "sha256": "e00842eb8e57462431ee3be098d13144a1f7593fe7439593437eec14986b676b"
+        }
+      ],
+      "processingSteps": [
+        "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
+        "Resized to 1024\u00b2 with Lanczos",
+        "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
+      ]
+    },
+    {
+      "id": "polyhaven-grass_medium_02-cards",
+      "title": "grass_medium_02 blade/leaf atlas",
+      "sourceUrl": "https://polyhaven.com/a/grass_medium_02",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-26",
+      "sources": [
+        {
+          "file": "grass_medium_02_diff_bled_1k.jpg",
+          "sha256": "9bcf31944648a7484179977e499dc6decd2805148bed1dea806fb89a5b7500a6"
+        },
+        {
+          "file": "grass_medium_02_alpha_1k.png",
+          "sha256": "15976877b3dbd22cd496a9549f1eb7d86710846a3631fb87eedbf046519e339f"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/grass_medium_02/grass_medium_02_cards.webp",
+          "bytes": 39582,
+          "sha256": "8846bae73ca43ded8a46028c043af36f7ac4c858ceb4a6cbc5c0146781a7c5d9"
+        }
+      ],
+      "processingSteps": [
+        "Colour (edge-bled) and alpha maps from the Poly Haven scan",
+        "Alpha merged into the colour map, resized to 512\u00b2",
+        "Encoded as RGBA WebP q85"
+      ],
+      "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
+    },
+    {
+      "id": "polyhaven-shrub_02-cards",
+      "title": "shrub_02 blade/leaf atlas",
+      "sourceUrl": "https://polyhaven.com/a/shrub_02",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-26",
+      "sources": [
+        {
+          "file": "shrub_02_diff_bled_1k.jpg",
+          "sha256": "2b5813b05b83d56a42d76dd3b0f28486f2fc73f843966dc19e63abc4aa6c0dce"
+        },
+        {
+          "file": "shrub_02_alpha_1k.png",
+          "sha256": "5c2c31bac311051db77443e1780078403c2df0a832c40fe6ed7bcd982695cdf0"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/textures/shrub_02/shrub_02_cards.webp",
+          "bytes": 46652,
+          "sha256": "66b49dfd239d9b003cc72c596d089109a89a0fd0fc69a53037875eb6d7157702"
+        }
+      ],
+      "processingSteps": [
+        "Colour (edge-bled) and alpha maps from the Poly Haven scan",
+        "Alpha merged into the colour map, resized to 512\u00b2",
+        "Encoded as RGBA WebP q85"
+      ],
+      "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
+    },
+    {
+      "id": "polyhaven-rock_moss_set_01",
+      "title": "Mossy rock set (scanned)",
+      "sourceUrl": "https://polyhaven.com/a/rock_moss_set_01",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "rock_moss_set_01_1k.gltf",
+          "sha256": "c36675aca9c6b2be7785c2534cf413b03ec82a5a2a5407a2b1c0cdb0346c9727"
+        },
+        {
+          "file": "rock_moss_set_01.bin",
+          "sha256": "de8360e6175879aaf02c171911069cf5f1852547f9ca7f10e440085dbcc3315e"
+        },
+        {
+          "file": "rock_moss_set_01_rough_1k.jpg",
+          "sha256": "4d6ec46623abd8e2cdb855f59c7ce31873ad61b36b60e4de579e9e776a497c6b"
+        },
+        {
+          "file": "rock_moss_set_01_nor_gl_1k.jpg",
+          "sha256": "eb4aad3f207f1dc5b624d74ae240372171626a66912bd71adf7bd3e518181d6e"
+        },
+        {
+          "file": "rock_moss_set_01_diff_1k.jpg",
+          "sha256": "40cea65d8aa4ee73a93b04af19963834d061eee9779c3fc2c1cba76eef812ccc"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/models/rock_moss_set_01.glb",
+          "bytes": 532044,
+          "sha256": "3eca5ec851659e3196f02212d8367263786c99f1141bdead0a275bd450fbd190"
+        }
+      ],
+      "processingSteps": [
+        "Poly Haven 1k glTF",
+        "npx @gltf-transform/cli optimize: meshopt compression, textures resized to 512 and encoded as WebP"
+      ]
+    },
+    {
+      "id": "polyhaven-dandelion_01",
+      "title": "Dandelion (scanned)",
+      "sourceUrl": "https://polyhaven.com/a/dandelion_01",
+      "author": "Poly Haven",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "dandelion_01_1k.gltf",
+          "sha256": "68f804fe29f641f37b03c470cf9065d34aacd1b4f580ed6f35385626c2bb42b7"
+        },
+        {
+          "file": "dandelion_01.bin",
+          "sha256": "ccff5a564f56a69374c09c25ae86c3684c46329309b4eef4569255b1ad54bdd0"
+        },
+        {
+          "file": "dandelion_01_nor_gl_1k.jpg",
+          "sha256": "fd69513a4803145f634b5ace49fed8709e454b3026d060687071757a72c33250"
+        },
+        {
+          "file": "dandelion_01_diff_1k.jpg",
+          "sha256": "17e49d535dfce890e539038a80eaa77d90dab5f1781350266dd8f736ee7370d6"
+        },
+        {
+          "file": "dandelion_01_arm_1k.jpg",
+          "sha256": "dad70c20756581fd795548f52a23580d94a2af538664dbbfe64e66a76e4eebb6"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/models/dandelion_01.glb",
+          "bytes": 471620,
+          "sha256": "5a49ec1b680852404dc09af72ad6c4f5dc1a0d351aebfedfe6b38371ed28d4c0"
+        }
+      ],
+      "processingSteps": [
+        "Poly Haven 1k glTF",
+        "npx @gltf-transform/cli optimize: meshopt compression, textures resized to 512 and encoded as WebP"
+      ]
+    },
+    {
+      "id": "kenney-impact-sounds",
+      "title": "Impact Sounds",
+      "sourceUrl": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-27",
+      "outputFiles": [
+        {
+          "path": "public/audio/biscuits-0.mp3",
+          "bytes": 1714,
+          "sha256": "e14718244f19aa9ec3afe8f8537357d7bd8deb161e23a1c2d108cd470f918332"
+        },
+        {
+          "path": "public/audio/biscuits-1.mp3",
+          "bytes": 1714,
+          "sha256": "2b91d8b27dc96297a655817bfcee7988afc50dfd921d7e545003fed64921a8f9"
+        },
+        {
+          "path": "public/audio/blanket-0.mp3",
+          "bytes": 1505,
+          "sha256": "e64bb8e46f7cb230aae0592165ea7b905dc02a3e460252d6efe508367c3f35d0"
+        },
+        {
+          "path": "public/audio/blanket-1.mp3",
+          "bytes": 1714,
+          "sha256": "36bc42687030806cea7fb3739dabee4e0cbf629ca8823fc07e1e91ebd5d276dd"
+        },
+        {
+          "path": "public/audio/chair-0.mp3",
+          "bytes": 3177,
+          "sha256": "25d2fb2222274f4e9212d11594e41a5c3344d590e961931ef812b838c81e9928"
+        },
+        {
+          "path": "public/audio/chair-1.mp3",
+          "bytes": 2968,
+          "sha256": "44607932665eed92351cd9e2fa2221a754bf05e7248e69bffdb64c85d947479c"
+        },
+        {
+          "path": "public/audio/kettle-0.mp3",
+          "bytes": 3595,
+          "sha256": "5abbf2632cf360a5831f4c0a0f294c560ab3e4fb20c6cfb2c76aa56d20b21921"
+        },
+        {
+          "path": "public/audio/kettle-1.mp3",
+          "bytes": 1714,
+          "sha256": "9bb011329e53ef6327b94011d0e1ca98b0ac34992c756aa1ea8b29a2ba7bfaea"
+        },
+        {
+          "path": "public/audio/lamp-0.mp3",
+          "bytes": 1923,
+          "sha256": "6988d1887070e725e2faf679d0d01de31fdb5211fb62dfe70f70e77ff98b6d18"
+        },
+        {
+          "path": "public/audio/lamp-1.mp3",
+          "bytes": 4849,
+          "sha256": "9651b2237607772a96d48c59dc6ff43df6f7201fca42670b0f4f73513b4f4409"
+        },
+        {
+          "path": "public/audio/log-0.mp3",
+          "bytes": 2968,
+          "sha256": "3cf8f29a32ffd63df16c4d23c37e41c4e272babf4687cf1d13a7c9248a194570"
+        },
+        {
+          "path": "public/audio/log-1.mp3",
+          "bytes": 2968,
+          "sha256": "0cd1c6afcc7bdc922cabc5ed62a06b15dcf8c290490adef97c00fb9269978e76"
+        },
+        {
+          "path": "public/audio/step-grass-0.mp3",
+          "bytes": 6730,
+          "sha256": "836b05be31f30f9cc72a69c31bb3063345600d25ca172c5e9b66e9e8d4e43339"
+        },
+        {
+          "path": "public/audio/step-grass-1.mp3",
+          "bytes": 5894,
+          "sha256": "4ef8696b6eae0299aeff2efa965eb94417f781187377e35551dcf8ef61d01ee1"
+        },
+        {
+          "path": "public/audio/step-grass-2.mp3",
+          "bytes": 6103,
+          "sha256": "73dedc43a365a23e74dd5aa69d953194f8ad6dcc3ef5f56b028ed5ec15865e60"
+        },
+        {
+          "path": "public/audio/step-grass-3.mp3",
+          "bytes": 5894,
+          "sha256": "c4b6a8c39f7fc70a0b8e2688a89ad23f48e66e5fad421428068c1e25dbdefda6"
+        },
+        {
+          "path": "public/audio/step-grass-4.mp3",
+          "bytes": 5267,
+          "sha256": "86721e99b9f40c76c594fa335ec4ca809b4585355f510199732f6cf08b4d68e0"
+        },
+        {
+          "path": "public/audio/step-wood-0.mp3",
+          "bytes": 2759,
+          "sha256": "04e5e9e46df6e61ec8ca0a9a67d0f6a57162d0a835d5bfb2f0e502671c792746"
+        },
+        {
+          "path": "public/audio/step-wood-1.mp3",
+          "bytes": 2550,
+          "sha256": "1262f26a6554b15229feb565e6c6a05b0dd3d7f3c9019ecad1e917bc70d4be13"
+        },
+        {
+          "path": "public/audio/step-wood-2.mp3",
+          "bytes": 2550,
+          "sha256": "74f2b413762751340c5b4351c60dc2584896f044d477dd23d2c3d306dbdafdb7"
+        },
+        {
+          "path": "public/audio/teacups-0.mp3",
+          "bytes": 2341,
+          "sha256": "1f8857f038e0841ef292bacc94086df9f37270e7cbe76d859358c1e52ed77ae0"
+        },
+        {
+          "path": "public/audio/teacups-1.mp3",
+          "bytes": 5894,
+          "sha256": "021d54f0f808ffc43f9aff93c54fec879bff12e74a3c8bb804622f474d05c46f"
+        },
+        {
+          "path": "public/audio/topple-0.mp3",
+          "bytes": 4849,
+          "sha256": "19e3a9a03135badc6f01bf948642fbaa33a6f93e3bf2e11e8d6acfdbb61471a5"
+        },
+        {
+          "path": "public/audio/topple-1.mp3",
+          "bytes": 4013,
+          "sha256": "f3b76076d854633b9adc1f2d9d1f004b8f04af6572c069f46e8bdd2223d87a69"
+        }
+      ],
+      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
+    },
+    {
+      "id": "kenney-rpg-audio",
+      "title": "RPG Audio",
+      "sourceUrl": "https://kenney.nl/assets/rpg-audio",
+      "author": "Kenney",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-27",
+      "outputFiles": [
+        {
+          "path": "public/audio/cloth-0.mp3",
+          "bytes": 5894,
+          "sha256": "9c93cc22b19e449bb1540793a5809f754319686dacca52de0bf45bf1fa0f876f"
+        },
+        {
+          "path": "public/audio/cloth-1.mp3",
+          "bytes": 4431,
+          "sha256": "cd953922e32ae3c6a9fe7830f2ee0da90010f2b3701f9ecf6fb91491cdc0dca4"
+        },
+        {
+          "path": "public/audio/creak-0.mp3",
+          "bytes": 5894,
+          "sha256": "cd6aa8c5404041283ad66e355ed9734d6b321db5ae8fdbcb5c0cd11cf802c8ed"
+        },
+        {
+          "path": "public/audio/creak-1.mp3",
+          "bytes": 3177,
+          "sha256": "17e5d1d69d3ec5733083ba3674b6cecb29b7bc51461fd7995fd83e8416823033"
+        }
+      ],
+      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
+    },
+    {
+      "id": "kenney-interface-sounds",
+      "title": "Interface Sounds",
+      "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+      "author": "Kenney",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-27",
+      "outputFiles": [
+        {
+          "path": "public/audio/flag-0.mp3",
+          "bytes": 1296,
+          "sha256": "efb3acad0228eea04f1eab43da8b9116b11f6ef089033350a6619e7756ea0c2a"
+        },
+        {
+          "path": "public/audio/silence-0.mp3",
+          "bytes": 1505,
+          "sha256": "5b5c3e915aaebae12389fd794697e2a1ab94a3b76715ceaa293cd49b9706062a"
+        },
+        {
+          "path": "public/audio/ui-back-0.mp3",
+          "bytes": 1087,
+          "sha256": "10e44782a950d19b2fd71d6e3a440fff35ca18a22a810c08a61cd64324bab848"
+        },
+        {
+          "path": "public/audio/ui-confirm-0.mp3",
+          "bytes": 2968,
+          "sha256": "adebc32ead22d518383fb37e191bf7861bc662bc298d40f09fd68e28ef31df2c"
+        },
+        {
+          "path": "public/audio/ui-select-0.mp3",
+          "bytes": 878,
+          "sha256": "98799b45da837eb737a646551b4be1d2bb19dd37d7df5ac188af1e0e1523ed4e"
+        },
+        {
+          "path": "public/audio/ui-tick-0.mp3",
+          "bytes": 669,
+          "sha256": "c0d58bea96ecdb6e60666d26ab655cf4d3658aed296e388fcf89804a81aaeecc"
+        }
+      ],
+      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
+    },
+    {
+      "id": "kenney-music-jingles",
+      "title": "Music Jingles (Pizzicato 10 and 03)",
+      "sourceUrl": "https://kenney.nl/assets/music-jingles",
+      "author": "Kenney",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-27",
+      "outputFiles": [
+        {
+          "path": "public/audio/jingle-start.mp3",
+          "bytes": 10388,
+          "sha256": "6065bd8e354d83c7c6e4225b946852a5fee2c4c62f3653f71d97426cbd3550c1"
+        },
+        {
+          "path": "public/audio/jingle-tea.mp3",
+          "bytes": 14463,
+          "sha256": "62cf9d9e5e53970583181b7b73879f1e875f8d346e21462c985092d2edec1898"
+        }
+      ],
+      "processingSteps": ["Re-encoded to stereo 96 kb/s MP3"]
+    },
+    {
+      "id": "oga-childrens-game-music-picnic",
+      "title": "Children's Game Music 1 - Picnic",
+      "sourceUrl": "https://opengameart.org/content/childrens-game-music-1-picnic",
+      "author": "heartade",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-27",
+      "outputFiles": [
+        {
+          "path": "public/audio/music-picnic.mp3",
+          "bytes": 369938,
+          "sha256": "a258e3e747359094ed1a702304b148ebbc58157ea067bdb39df76ef2fb4833f1"
+        }
+      ],
+      "processingSteps": ["Re-encoded to stereo 80 kb/s MP3, looped"]
+    },
+    {
+      "id": "oga-park-ambiences",
+      "title": "Park ambiences (birds, wind)",
+      "sourceUrl": "https://opengameart.org/content/park-ambiences",
+      "author": "Thimras",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-27",
+      "outputFiles": [
+        {
+          "path": "public/audio/amb-birds.mp3",
+          "bytes": 228499,
+          "sha256": "a2ba49dbdfb5d083cf262f1ca51318defddbb051a015d535f9f7a6e886dfca12"
+        },
+        {
+          "path": "public/audio/amb-wind.mp3",
+          "bytes": 144490,
+          "sha256": "949dd57157fcb5e4a5c8d767f0b9fdd70bbd080fce3e5c872d945b6daeb99491"
+        }
+      ],
+      "processingSteps": [
+        "Segment trimmed, tail crossfaded into head for a seamless loop, mono 48 kb/s MP3"
+      ]
+    }
+  ],
+  "policy": "Only CC0, public-domain, NASA or CC-BY assets ship. Every shipped file is listed with its source, licence, sha256 and processing.",
+  "totalShippedBytes": 6299516
+}

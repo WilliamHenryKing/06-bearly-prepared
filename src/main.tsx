@@ -130,11 +130,36 @@ let last = performance.now();
 let acc = 0;
 let sinceHud = 0;
 let first = true;
+let sceneReady = false;
+scene.ready.then(
+  () => {
+    sceneReady = true;
+  },
+  () => {
+    sceneReady = true;
+  },
+);
+// Adaptive quality: if frames average over 16.7 ms for two seconds, drop GTAO, then resolution.
+let slowTime = 0;
+let slowFrames = 0;
+let adaptCooldown = 3;
 
 function tick(now: number) {
   // Up to 0.1 s per frame keeps the simulation in real time even on slow software rendering.
-  const dt = visual.frozen ? 0 : Math.min(0.1, (now - last) / 1000);
+  const raw = (now - last) / 1000;
+  const dt = visual.frozen ? 0 : Math.min(0.1, raw);
   last = now;
+  if (!visualApi && raw < 1) {
+    adaptCooldown -= raw;
+    slowTime += raw;
+    slowFrames++;
+    if (slowTime >= 2) {
+      if (adaptCooldown <= 0 && slowTime / slowFrames > 1 / 60 + 0.0005 && scene.stage.degrade())
+        adaptCooldown = 3;
+      slowTime = 0;
+      slowFrames = 0;
+    }
+  }
   if (run.phase === "hiking" && !hintOpen) {
     acc += dt;
     const input = readInput();
@@ -169,7 +194,7 @@ function tick(now: number) {
     hudDirty = false;
     sinceHud = 0;
   }
-  if (first) {
+  if (first && sceneReady) {
     first = false;
     requestAnimationFrame(() => {
       worldReady();

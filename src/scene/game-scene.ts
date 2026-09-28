@@ -25,6 +25,8 @@ import { Spills } from "./spills";
 import { Stage } from "./stage";
 import { TeaScene } from "./tea";
 import { buildTerrain, buildTrail, Ground } from "./terrain";
+import { createGroundMaterial } from "./terrain-material";
+import { loadPbrSet, setAnisotropy } from "./textures";
 import { WindStreaks } from "./wind";
 
 // Turns the rules' state into the picture each frame: places the bear on the trail, mirrors
@@ -67,8 +69,7 @@ export class GameScene {
     this.path = samplePath();
     this.ground = new Ground(this.path);
     const { scene } = this.stage;
-    scene.add(buildTerrain(this.ground, new THREE.Vector2(-18, 24), 150, mobile ? 130 : 180));
-    scene.add(buildTrail(this.path, TRAIL_LENGTH));
+    this.ready = this.load(mobile);
     const dressing = buildDressing(this.ground, this.path, mobile);
     scene.add(dressing.group);
     this.flags = dressing.flags;
@@ -81,6 +82,23 @@ export class GameScene {
     this.stage.aoHidden.push(this.streaks.group);
     this.rig = new CameraRig(this.stage.camera, this.path);
     windUniforms.uSway.value = calm ? 0.25 : 1;
+  }
+
+  /** Resolves once the textured ground and trail are in the scene. */
+  readonly ready: Promise<void>;
+
+  private async load(mobile: boolean) {
+    setAnisotropy(Math.min(8, this.stage.renderer.capabilities.getMaxAnisotropy()));
+    const [turf, dirt, rock] = await Promise.all([
+      loadPbrSet("grass_ground"),
+      loadPbrSet("rocky_trail"),
+      loadPbrSet("rock_face_03"),
+    ]);
+    const ground = createGroundMaterial({ turf, dirt, rock });
+    this.stage.scene.add(
+      buildTerrain(this.ground, new THREE.Vector2(-18, 24), 150, mobile ? 130 : 180, ground),
+      buildTrail(this.path, TRAIL_LENGTH, dirt),
+    );
   }
 
   /** Back to the trailhead for a new run. */

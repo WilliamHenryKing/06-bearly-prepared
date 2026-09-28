@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { LEDGE, type PathPoint, TRAIL_LENGTH } from "../game/trail";
-import { fibreBump, PALETTE } from "./materials";
+import { applySet, type PbrSet } from "./textures";
 
 // Ground shaped around the authored trail: the path is carved flat, hills roll away from it,
 // and along the ledge one side drops into the valley while the other rises into a rock wall.
@@ -73,79 +73,77 @@ export class Ground {
   }
 }
 
-export function buildTerrain(ground: Ground, center: THREE.Vector2, size: number, segs: number) {
+/** The meadow mesh; vertex colours carry blend weights for the ground material. */
+export function buildTerrain(
+  ground: Ground,
+  center: THREE.Vector2,
+  size: number,
+  segs: number,
+  material: THREE.Material,
+) {
   const geo = new THREE.PlaneGeometry(size, size, segs, segs);
   geo.rotateX(-Math.PI / 2);
   const pos = geo.getAttribute("position") as THREE.BufferAttribute;
   const colors = new Float32Array(pos.count * 3);
-  const grass = new THREE.Color(PALETTE.grass);
-  const moss = new THREE.Color(PALETTE.moss);
-  const rock = new THREE.Color(PALETTE.rock);
-  const dirt = new THREE.Color(PALETTE.dirt);
-  const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + center.x;
     const z = pos.getZ(i) + center.y;
     const q = ground.query(x, z);
     pos.setXYZ(i, x, q.height, z);
-    c.copy(grass).lerp(moss, 0.5 + 0.5 * Math.sin(x * 0.3 + z * 0.2));
-    const steep = Math.min(1, Math.abs(q.height - q.near.y) / 3);
-    if (q.near.d > LEDGE.from - 2 && q.near.d < LEDGE.to + 2) c.lerp(rock, steep * 0.9);
-    c.lerp(dirt, (1 - smooth(0.9, 1.8, q.dist)) * 0.7);
-    colors.set([c.r, c.g, c.b], i * 3);
+    const steep = Math.min(1, Math.abs(q.height - q.near.y) / 2.5);
+    const onLedge = q.near.d > LEDGE.from - 3 && q.near.d < LEDGE.to + 3 ? 1 : 0;
+    const rock = Math.max(onLedge * steep, smooth(4, 12, q.height - q.near.y - q.dist * 0.18));
+    const dirt = 1 - smooth(0.7, 2.1, q.dist);
+    colors.set([1 - rock * 0.25, dirt, rock], i * 3);
   }
   geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   geo.computeVertexNormals();
-  const bump = fibreBump.clone();
-  bump.repeat.set(size / 3, size / 3);
-  bump.needsUpdate = true;
-  const mesh = new THREE.Mesh(
-    geo,
-    new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.95,
-      bumpMap: bump,
-      bumpScale: 2,
-    }),
-  );
+  const mesh = new THREE.Mesh(geo, material);
   mesh.receiveShadow = true;
   return mesh;
 }
 
-/** A painted-dirt ribbon laid along the trail. */
-export function buildTrail(path: readonly PathPoint[], length: number) {
+/** The trail: a rocky-dirt ribbon whose edges feather into the dirt verge of the meadow. */
+export function buildTrail(path: readonly PathPoint[], length: number, set: PbrSet) {
   const pts = path.filter((p) => p.d <= length - 0.6);
   const verts: number[] = [];
   const uvs: number[] = [];
+  const cols: number[] = [];
   const idx: number[] = [];
+  const across = [-1, -0.7, 0.7, 1];
   pts.forEach((p, i) => {
     const narrow = p.d > LEDGE.from && p.d < LEDGE.to ? 0.62 : 0.85;
     const w = narrow + Math.sin(p.d * 1.3) * 0.05;
     const rx = Math.cos(p.heading);
     const rz = -Math.sin(p.heading);
-    verts.push(p.x - rx * w, p.y + 0.03, p.z - rz * w, p.x + rx * w, p.y + 0.03, p.z + rz * w);
-    uvs.push(0, p.d * 0.5, 1, p.d * 0.5);
+    for (const a of across) {
+      verts.push(p.x + rx * w * a, p.y + 0.025 + (1 - Math.abs(a)) * 0.012, p.z + rz * w * a);
+      uvs.push(a * w * 0.45, p.d * 0.45);
+      cols.push(1, 1, 1, Math.abs(a) === 1 ? 0 : 1);
+    }
     if (i > 0) {
-      const a = (i - 1) * 2;
-      idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      const b = (i - 1) * 4;
+      for (let k = 0; k < 3; k++)
+        idx.push(b + k, b + k + 1, b + k + 4, b + k + 1, b + k + 5, b + k + 4);
     }
   });
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
   geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(cols, 4));
   geo.setIndex(idx);
   geo.computeVertexNormals();
-  const bump = fibreBump.clone();
-  bump.needsUpdate = true;
-  const mat = new THREE.MeshStandardMaterial({
-    color: PALETTE.dirt,
-    roughness: 1,
-    bumpMap: bump,
-    bumpScale: 3,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
-  });
+  const mat = applySet(
+    new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    }),
+    set,
+  );
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
   return mesh;

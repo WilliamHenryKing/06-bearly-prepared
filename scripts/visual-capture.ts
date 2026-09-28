@@ -50,8 +50,9 @@ for (const name of bookmarks) {
   });
   await page.goto(base);
   await page.waitForFunction(() => (window as Win).__VISUAL_TEST__?.ready === true, null, {
-    timeout: 120_000,
+    timeout: 600_000,
   });
+  page.setDefaultTimeout(600_000);
   await page.evaluate(async (n) => {
     const h = (window as Win).__VISUAL_TEST__ as Hook;
     h.setBookmark(n);
@@ -59,7 +60,7 @@ for (const name of bookmarks) {
     h.freeze(true);
     await h.settle(6);
   }, name);
-  await page.screenshot({ path: `${out}/${name}.png` });
+  await page.screenshot({ path: `${out}/${name}.png`, timeout: 600_000 });
   console.log(`captured ${name}`);
   await page.close();
 }
