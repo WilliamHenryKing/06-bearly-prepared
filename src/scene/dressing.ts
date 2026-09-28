@@ -265,10 +265,5 @@ function buildLookout(path: readonly PathPoint[]) {
     post.castShadow = true;
     g.add(post);
   }
-  const sign = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 0.05), paintedWood(0x3f6a45));
-  sign.position.set(-1.6, 1.25, 1.9);
-  const signPost = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.3, 0.07), rail);
-  signPost.position.set(-1.6, 0.65, 1.9);
-  g.add(sign, signPost);
   return g;
 }

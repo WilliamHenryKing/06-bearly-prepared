@@ -16,12 +16,14 @@ import {
 import { Bear, restPose } from "./bear";
 import { CameraRig } from "./camera";
 import { buildDressing, windUniforms } from "./dressing";
+import { Landmarks } from "./landmarks";
 import { PALETTE } from "./materials";
 import { buildProp } from "./props";
 import { Spills } from "./spills";
 import { Stage } from "./stage";
 import { TeaScene } from "./tea";
 import { buildSky, buildTerrain, buildTrail, Ground } from "./terrain";
+import { WindStreaks } from "./wind";
 
 // Turns the rules' state into the picture each frame: places the bear on the trail, mirrors
 // the simulated stack, throws spills, plays topples and lays out the tea.
@@ -46,6 +48,8 @@ export class GameScene {
   private silence = false;
   private hush = 0;
   private clock = 0;
+  private landmarks: Landmarks;
+  private streaks = new WindStreaks();
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -64,6 +68,8 @@ export class GameScene {
     this.flags = dressing.flags;
     this.spills = new Spills(this.ground);
     scene.add(this.spills.group, this.bear.root, this.tea.group);
+    this.landmarks = new Landmarks(this.path);
+    scene.add(this.landmarks.group, this.streaks.group);
     this.rig = new CameraRig(this.stage.camera, this.path);
     windUniforms.uSway.value = calm ? 0.25 : 1;
   }
@@ -247,7 +253,18 @@ export class GameScene {
     const w = windUniforms.uWind.value;
     w.set(w.x + (r.x - w.x) * Math.min(1, dt * 6), w.y + (r.z - w.y) * Math.min(1, dt * 6));
 
+    const right = this.rightAt(s.d);
+    const rate = onLedge ? (g.warning ? 5 : 1.5) + g.strength * 40 : 0;
+    this.streaks.update(
+      dt,
+      this.bear.root.position,
+      right,
+      g.dir || 1,
+      this.calm ? rate * 0.3 : rate,
+    );
+    this.landmarks.update(g.dir * (0.15 + g.strength), this.clock, this.calm);
     this.spills.update(dt);
+    this.rig.teaTime = Math.max(0, this.teaTime);
     const mode = s.phase === "packing" ? "pack" : s.phase === "tea" ? "tea" : "hike";
     this.rig.update(mode, d, s.phase === "tea" ? 0 : s.stats.height, dt, still);
     this.stage.follow(this.bear.root.position);

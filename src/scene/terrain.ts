@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { LEDGE, type PathPoint } from "../game/trail";
+import { LEDGE, type PathPoint, TRAIL_LENGTH } from "../game/trail";
 import { fibreBump, PALETTE } from "./materials";
 
 // Ground shaped around the authored trail: the path is carved flat, hills roll away from it,
@@ -62,6 +62,9 @@ export class Ground {
       const shaped = near.y - 0.04 + (side < 0 ? drop : wall);
       h = h * (1 - ledge) + shaped * ledge;
     }
+    // Past the lookout deck the ground falls away and the valley opens up.
+    const view = smooth(TRAIL_LENGTH + 2, TRAIL_LENGTH + 7, near.d);
+    if (view > 0) h = h * (1 - view) + (near.y - 9 - Math.max(0, best - 3) * 0.35) * view;
     return { dist: best, side, near, height: h };
   }
 
@@ -111,7 +114,7 @@ export function buildTerrain(ground: Ground, center: THREE.Vector2, size: number
 
 /** A painted-dirt ribbon laid along the trail. */
 export function buildTrail(path: readonly PathPoint[], length: number) {
-  const pts = path.filter((p) => p.d <= length + 6);
+  const pts = path.filter((p) => p.d <= length + 2);
   const verts: number[] = [];
   const uvs: number[] = [];
   const idx: number[] = [];

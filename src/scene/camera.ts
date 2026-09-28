@@ -14,6 +14,8 @@ export class CameraRig {
   private ready = false;
   /** -1 left … 1 right: which shoulder the camera looks over. */
   private side = 1;
+  /** Seconds since arriving at the lookout. */
+  teaTime = 0;
 
   constructor(
     private camera: THREE.PerspectiveCamera,
@@ -44,15 +46,30 @@ export class CameraRig {
       pos.y += 0.9 + tall * 0.55;
       look.copy(base).setY(here.y + 0.3 + tall * 0.5);
     } else if (mode === "tea") {
-      pos
-        .copy(base)
+      // First watch the bear settle and pour, then drift round behind it as the view opens.
+      const t = this.teaTime;
+      const k = t < 4 ? 0 : Math.min(1, (t - 4) / 4);
+      const e = k * k * (3 - 2 * k);
+      const front = base
+        .clone()
         .addScaledVector(fwd, portrait ? 4.4 : 3.3)
         .addScaledVector(right, portrait ? 1.6 : 2);
-      pos.y += 1.5;
-      look
-        .copy(base)
+      front.y += 1.5;
+      const behind = base
+        .clone()
+        .addScaledVector(fwd, -2.8)
+        .addScaledVector(right, portrait ? -1.2 : -2.2);
+      behind.y += 2.1;
+      pos.copy(front).lerp(behind, e);
+      const lookFront = base
+        .clone()
         .addScaledVector(fwd, 0.4)
         .setY(here.y + 0.5);
+      const lookView = base
+        .clone()
+        .addScaledVector(fwd, 7)
+        .setY(here.y - 0.6);
+      look.copy(lookFront).lerp(lookView, e);
     } else {
       // Three-quarter follow: close and to one side so the stack fills the frame and its lean
       // reads clearly, still looking a little up the trail. On the ledge the camera swings out
