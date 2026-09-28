@@ -21,7 +21,7 @@
 @keyframes sock{0%,100%{transform:rotate(-4deg) scaleX(1)}50%{transform:rotate(5deg) scaleX(.94)}}
 @keyframes drift{to{transform:translateX(26px)}}
 @keyframes grass{to{transform:skewX(-8deg)}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.sway,.n1,.n2,.lamp,.head,.sock,.cloud,.grass{animation:none}}
 </style>
 <rect width="1280" height="360" fill="url(#sky)"/>
 <g class="cloud" fill="#fffaf0"><ellipse cx="640" cy="62" rx="70" ry="18"/><ellipse cx="690" cy="52" rx="44" ry="20"/><ellipse cx="1040" cy="44" rx="58" ry="14"/><ellipse cx="200" cy="40" rx="50" ry="12"/></g>
