@@ -24,7 +24,7 @@ import { buildProp } from "./props";
 import { Spills } from "./spills";
 import { Stage } from "./stage";
 import { TeaScene } from "./tea";
-import { buildSky, buildTerrain, buildTrail, Ground } from "./terrain";
+import { buildTerrain, buildTrail, Ground } from "./terrain";
 import { WindStreaks } from "./wind";
 
 // Turns the rules' state into the picture each frame: places the bear on the trail, mirrors
@@ -67,7 +67,6 @@ export class GameScene {
     this.path = samplePath();
     this.ground = new Ground(this.path);
     const { scene } = this.stage;
-    scene.add(buildSky());
     scene.add(buildTerrain(this.ground, new THREE.Vector2(-18, 24), 150, mobile ? 130 : 180));
     scene.add(buildTrail(this.path, TRAIL_LENGTH));
     const dressing = buildDressing(this.ground, this.path, mobile);
@@ -79,6 +78,7 @@ export class GameScene {
     this.meadow = new Meadow(this.ground, this.path, mobile);
     scene.add(this.meadow.group);
     scene.add(this.landmarks.group, this.streaks.group);
+    this.stage.aoHidden.push(this.streaks.group);
     this.rig = new CameraRig(this.stage.camera, this.path);
     windUniforms.uSway.value = calm ? 0.25 : 1;
   }
@@ -273,7 +273,7 @@ export class GameScene {
 
     // The world dims a little while the biscuits are mourned.
     this.hush += (pose.bow - this.hush) * Math.min(1, dt * 2);
-    this.stage.key.intensity = 2.6 - 1.4 * this.hush;
+    this.stage.hush(this.hush);
 
     const p = pointAt(this.path, d);
     this.bear.root.position.set(p.x, p.y + (this.teaTime >= 0 ? this.seat * pose.sit : 0), p.z);

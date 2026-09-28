@@ -5,7 +5,7 @@ import { felt, matte } from "./materials";
 import type { Ground } from "./terrain";
 
 // Meadow richness, all instanced so phones stay smooth: stemmed wildflowers, felt bushes,
-// varied rocks, pebbles lining the path, a tree line on the far hills and slow clouds.
+// varied rocks, pebbles lining the path and a tree line on the far hills.
 
 let seed = 29;
 const rand = () => {
@@ -30,7 +30,6 @@ function instanced(geo: THREE.BufferGeometry, mat: THREE.Material, n: number, sh
 
 export class Meadow {
   readonly group = new THREE.Group();
-  private clouds = new THREE.Group();
 
   constructor(ground: Ground, path: readonly PathPoint[], mobile: boolean) {
     const area = { cx: -18, cz: 24, size: 100 };
@@ -159,35 +158,10 @@ export class Meadow {
       far.setColorAt(i, c.setHSL(0.37 + rand() * 0.04, 0.25, 0.22 + rand() * 0.08));
     }
     this.group.add(far);
-
-    // Soft clouds: clusters of flattened puffs, unfogged so they stay bright.
-    const puff = new THREE.SphereGeometry(1, 14, 10);
-    const cloudMat = new THREE.MeshStandardMaterial({
-      color: 0xfffaf0,
-      roughness: 1,
-      emissive: 0x6a6660,
-      fog: false,
-    });
-    for (let i = 0; i < (mobile ? 8 : 14); i++) {
-      const cloud = new THREE.Group();
-      const a = (i / 14) * Math.PI * 2 + rand();
-      const r = 150 + rand() * 90;
-      cloud.position.set(area.cx + Math.cos(a) * r, 50 + rand() * 30, area.cz + Math.sin(a) * r);
-      for (let j = 0; j < 5; j++) {
-        const m = new THREE.Mesh(puff, cloudMat);
-        const sz = 8 + rand() * 9;
-        m.scale.set(sz * 1.5, sz * 0.55, sz);
-        m.position.set((j - 2) * 9 + rand() * 4, rand() * 3, rand() * 6);
-        cloud.add(m);
-      }
-      cloud.lookAt(area.cx, cloud.position.y, area.cz);
-      this.clouds.add(cloud);
-    }
-    this.clouds.position.set(0, 0, 0);
-    this.group.add(this.clouds);
   }
 
   update(dt: number, calm: boolean) {
-    if (!calm) this.clouds.rotation.y += dt * 0.004;
+    void dt;
+    void calm;
   }
 }

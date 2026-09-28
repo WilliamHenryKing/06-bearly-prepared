@@ -14,7 +14,7 @@ export class WindStreaks {
   readonly group = new THREE.Group();
   private pool: Streak[] = [];
   private mat = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
+    color: 0x6a6e70,
     transparent: true,
     opacity: 0,
     depthWrite: false,
