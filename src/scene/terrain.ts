@@ -114,7 +114,7 @@ export function buildTerrain(ground: Ground, center: THREE.Vector2, size: number
 
 /** A painted-dirt ribbon laid along the trail. */
 export function buildTrail(path: readonly PathPoint[], length: number) {
-  const pts = path.filter((p) => p.d <= length + 2);
+  const pts = path.filter((p) => p.d <= length - 0.6);
   const verts: number[] = [];
   const uvs: number[] = [];
   const idx: number[] = [];

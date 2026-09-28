@@ -233,7 +233,7 @@ function buildFlags(path: readonly PathPoint[]) {
 }
 
 function buildLookout(path: readonly PathPoint[]) {
-  const end = pointAt(path, TRAIL_LENGTH + 1.5);
+  const end = pointAt(path, TRAIL_LENGTH + 1.2);
   const g = new THREE.Group();
   g.position.set(end.x, end.y, end.z);
   g.rotation.y = end.heading;

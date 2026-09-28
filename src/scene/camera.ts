@@ -83,9 +83,9 @@ export class CameraRig {
         .copy(base)
         .addScaledVector(dir, -back)
         .addScaledVector(across, this.side * (portrait ? 1.3 : 2));
-      pos.y += 1.25 + loadHeight * 0.75 + (portrait ? 0.5 : 0);
+      pos.y += 1.6 + loadHeight * 0.8 + (portrait ? 0.5 : 0);
       look.copy(base).addScaledVector(dir, 1.8);
-      look.y = here.y + 0.75 + loadHeight * 0.5;
+      look.y = here.y + 0.85 + loadHeight * 0.55;
     }
 
     if (!this.ready || still) {

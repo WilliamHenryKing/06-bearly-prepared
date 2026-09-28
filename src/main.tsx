@@ -123,7 +123,8 @@ let sinceHud = 0;
 let first = true;
 
 function tick(now: number) {
-  const dt = Math.min(0.05, (now - last) / 1000);
+  // Up to 0.1 s per frame keeps the simulation in real time even on slow software rendering.
+  const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   if (run.phase === "hiking" && !hintOpen) {
     acc += dt;

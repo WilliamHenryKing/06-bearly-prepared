@@ -252,6 +252,5 @@ export class Bear {
 
     // A topple rolls the whole bear onto its side.
     this.root.rotation.z = -p.flopSide * p.flop * 1.35;
-    this.root.position.y = -p.flop * 0.05;
   }
 }

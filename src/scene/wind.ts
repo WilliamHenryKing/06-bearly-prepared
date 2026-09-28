@@ -20,7 +20,7 @@ export class WindStreaks {
     depthWrite: false,
     side: THREE.DoubleSide,
   });
-  private geo = new THREE.PlaneGeometry(1.4, 0.035);
+  private geo = new THREE.PlaneGeometry(1.6, 0.06);
   private spawn = 0;
 
   /**
@@ -42,7 +42,7 @@ export class WindStreaks {
         continue;
       }
       s.mesh.position.addScaledVector(s.mesh.userData.v as THREE.Vector3, dt * s.speed);
-      (s.mesh.material as THREE.MeshBasicMaterial).opacity = Math.sin(t * Math.PI) * 0.55;
+      (s.mesh.material as THREE.MeshBasicMaterial).opacity = Math.sin(t * Math.PI) * 0.8;
     }
   }
 
