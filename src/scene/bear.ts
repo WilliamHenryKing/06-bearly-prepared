@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { felt, matte, PALETTE } from "./materials";
+import { canvasCloth, felt, matte, PALETTE } from "./materials";
 
 // The bear: a felt character built from soft primitives on a small rig. All expression comes
 // from the pose each frame: walk cycle, counter-lean, a nervous upward glance when the load
@@ -155,11 +155,11 @@ export class Bear {
     }
 
     // Backpack on the load pivot; items stack from 0.5 m above the hips.
-    const canvas = felt(0xb5552e, 0.6);
+    const canvas = canvasCloth(0xb5552e);
     const pack = ellipsoid(0.24, 0.26, 0.14, canvas);
     pack.position.set(0, 0.26, 0);
     this.load.add(pack);
-    const flap = ellipsoid(0.2, 0.08, 0.12, felt(0x8a3d22, 0.6));
+    const flap = ellipsoid(0.2, 0.08, 0.12, canvasCloth(0x8a3d22));
     flap.position.set(0, 0.46, 0.01);
     this.load.add(flap);
     const pocket = ellipsoid(0.15, 0.1, 0.06, canvas);

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { CHECKPOINTS, LOGS, type PathPoint, pointAt, TRAIL_LENGTH } from "../game/trail";
-import { felt, matte, PALETTE, paintedWood } from "./materials";
+import { bark, matte, PALETTE, paintedWood } from "./materials";
 
 // Set dressing: the authored logs,
 // checkpoint flags and the lookout platform where tea is taken.
@@ -16,7 +16,7 @@ export function buildDressing(path: readonly PathPoint[]) {
 
 function buildLogs(path: readonly PathPoint[]) {
   const g = new THREE.Group();
-  const bark = felt(PALETTE.bark, 0.3);
+  const barkMat = bark();
   const cut = paintedWood(0xd8b27a);
   for (const log of LOGS) {
     const pt = pointAt(path, log.at);
@@ -25,7 +25,7 @@ function buildLogs(path: readonly PathPoint[]) {
     holder.rotation.y = pt.heading;
     // The log sits higher on the side opposite its lurch: you stumble downhill.
     holder.rotation.z = log.lurch * 0.1;
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 2.4, 14), bark);
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 2.4, 14), barkMat);
     body.rotation.z = Math.PI / 2;
     body.position.y = 0.12;
     body.castShadow = body.receiveShadow = true;

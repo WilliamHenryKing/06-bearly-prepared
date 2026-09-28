@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { type PbrSet, repeated } from "./textures";
 
 // Tactile materials, painted procedurally into small canvases: felt, painted wood, canvas
 // weave, speckled enamel. Everything shares one warm palette.
@@ -98,34 +99,81 @@ const speckle = canvas(128, (g, s) => {
   }
 });
 
+// Scanned detail maps (see assets.manifest.json) arrive after load; materials made before then
+// are upgraded in place, and anything made later picks them up directly.
+type Kind = "felt" | "wood" | "cloth" | "bark";
+export interface DetailSets {
+  felt: PbrSet;
+  wood: PbrSet;
+  cloth: PbrSet;
+  bark: PbrSet;
+}
+const registry: { kind: Kind; m: THREE.MeshStandardMaterial }[] = [];
+let detail: DetailSets | null = null;
+const REPEAT: Record<Kind, number> = { felt: 5, wood: 1, cloth: 6, bark: 1 };
+const NORMAL: Record<Kind, number> = { felt: 0.7, wood: 0.8, cloth: 0.9, bark: 1 };
+
+function upgrade(kind: Kind, m: THREE.MeshStandardMaterial) {
+  if (!detail) return;
+  const set = repeated(detail[kind], REPEAT[kind]);
+  m.normalMap = set.normal;
+  m.normalScale.setScalar(NORMAL[kind]);
+  m.aoMap = set.arm;
+  if (kind === "bark") m.map = set.colour;
+  if (kind !== "wood") m.roughnessMap = set.arm;
+  m.bumpMap = null;
+  m.needsUpdate = true;
+}
+
+function register<T extends THREE.MeshStandardMaterial>(kind: Kind, m: T): T {
+  registry.push({ kind, m });
+  upgrade(kind, m);
+  return m;
+}
+
+export function provideDetail(sets: DetailSets) {
+  detail = sets;
+  for (const r of registry) upgrade(r.kind, r.m);
+}
+
 export function felt(color: number, sheen = 0.8) {
-  return new THREE.MeshPhysicalMaterial({
-    color,
-    roughness: 0.95,
-    sheen,
-    sheenRoughness: 0.55,
-    sheenColor: new THREE.Color(color).lerp(new THREE.Color(0xfff3dc), 0.5),
-    bumpMap: fibreBump,
-    bumpScale: 1.4,
-  });
+  return register(
+    "felt",
+    new THREE.MeshPhysicalMaterial({
+      color,
+      roughness: 1,
+      sheen,
+      sheenRoughness: 0.5,
+      sheenColor: new THREE.Color(color).lerp(new THREE.Color(0xfff3dc), 0.55),
+      bumpMap: fibreBump,
+      bumpScale: 1.4,
+    }),
+  );
 }
 
 export function paintedWood(color: number) {
-  return new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.62,
-    map: grain,
-    bumpMap: grain,
-    bumpScale: 0.6,
-  });
+  return register(
+    "wood",
+    new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.62,
+      map: grain,
+      bumpMap: grain,
+      bumpScale: 0.6,
+    }),
+  );
+}
+
+export function bark() {
+  return register("bark", new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 }));
 }
 
 export function enamel(color: number) {
   return new THREE.MeshPhysicalMaterial({
     color,
-    roughness: 0.38,
-    clearcoat: 0.6,
-    clearcoatRoughness: 0.35,
+    roughness: 0.3,
+    clearcoat: 1,
+    clearcoatRoughness: 0.12,
     map: speckle,
   });
 }
@@ -133,23 +181,40 @@ export function enamel(color: number) {
 export function ceramic(color: number) {
   return new THREE.MeshPhysicalMaterial({
     color,
+    roughness: 0.25,
+    clearcoat: 1,
+    clearcoatRoughness: 0.08,
+  });
+}
+
+/** Brushed brass: metallic, with anisotropic highlights along the brushing. */
+export function brass() {
+  return new THREE.MeshPhysicalMaterial({
+    color: 0xd9ad5b,
+    metalness: 1,
     roughness: 0.3,
-    clearcoat: 0.8,
-    clearcoatRoughness: 0.2,
+    anisotropy: 0.7,
   });
 }
 
 export function tartanCloth() {
   const t = tartan.clone();
   t.needsUpdate = true;
-  return new THREE.MeshPhysicalMaterial({
-    map: t,
-    roughness: 0.95,
-    sheen: 0.6,
-    sheenColor: new THREE.Color(0xffe0c0),
-    bumpMap: fibreBump,
-    bumpScale: 1.2,
-  });
+  return register(
+    "cloth",
+    new THREE.MeshPhysicalMaterial({
+      map: t,
+      roughness: 0.95,
+      sheen: 0.6,
+      sheenColor: new THREE.Color(0xffe0c0),
+      bumpMap: fibreBump,
+      bumpScale: 1.2,
+    }),
+  );
+}
+
+export function canvasCloth(color: number) {
+  return register("cloth", new THREE.MeshStandardMaterial({ color, roughness: 0.95 }));
 }
 
 export const matte = (color: number, roughness = 0.9) =>

@@ -18,7 +18,7 @@ import { type Bookmark, bookmarkCamera } from "./bookmarks";
 import { CameraRig } from "./camera";
 import { buildDressing } from "./dressing";
 import { Landmarks } from "./landmarks";
-import { PALETTE } from "./materials";
+import { PALETTE, provideDetail } from "./materials";
 import { buildProp } from "./props";
 import { Spills } from "./spills";
 import { Stage } from "./stage";
@@ -86,11 +86,16 @@ export class GameScene {
 
   private async load(mobile: boolean) {
     setAnisotropy(Math.min(8, this.stage.renderer.capabilities.getMaxAnisotropy()));
-    const [turf, dirt, rock] = await Promise.all([
+    const [turf, dirt, rock, wool, planks, hessian, barkSet] = await Promise.all([
       loadPbrSet("grass_ground"),
       loadPbrSet("rocky_trail"),
       loadPbrSet("rock_face_03"),
+      loadPbrSet("wool_boucle"),
+      loadPbrSet("distressed_painted_planks"),
+      loadPbrSet("hessian_230"),
+      loadPbrSet("bark_brown_02"),
     ]);
+    provideDetail({ felt: wool, wood: planks, cloth: hessian, bark: barkSet });
     const ground = createGroundMaterial({ turf, dirt, rock });
     this.stage.scene.add(
       buildTerrain(this.ground, new THREE.Vector2(-18, 24), 150, mobile ? 130 : 180, ground),

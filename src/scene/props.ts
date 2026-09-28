@@ -1,6 +1,15 @@
 import * as THREE from "three";
 import type { ItemId } from "../game/items";
-import { ceramic, enamel, felt, matte, PALETTE, paintedWood, tartanCloth } from "./materials";
+import {
+  brass,
+  ceramic,
+  enamel,
+  felt,
+  matte,
+  PALETTE,
+  paintedWood,
+  tartanCloth,
+} from "./materials";
 
 // The camping prop set. Each builder returns a group whose origin is the bottom centre and
 // whose height matches the rules' item height, so the drawn stack is the simulated stack.
@@ -33,7 +42,7 @@ const wood = paintedWood(PALETTE.wood);
 const greenWood = paintedWood(0x4f7a58);
 const mustard = paintedWood(PALETTE.mustard);
 const shade = felt(0xf1dfb8, 0.4);
-const brass = new THREE.MeshStandardMaterial({ color: 0xc8a050, roughness: 0.35, metalness: 0.8 });
+const brassMat = brass();
 const biscuit = matte(0xdcae6a, 0.8);
 
 function kettle() {
@@ -122,8 +131,8 @@ function stool() {
 
 function lamp(lit = false) {
   const g = new THREE.Group();
-  g.add(mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.04, 24), brass, 0, 0.02, 0));
-  g.add(mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.8, 10), brass, 0, 0.42, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.04, 24), brassMat, 0, 0.02, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.8, 10), brassMat, 0, 0.42, 0));
   const shadeMat = lit
     ? new THREE.MeshStandardMaterial({
         color: 0xf6e2b0,
