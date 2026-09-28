@@ -16,10 +16,9 @@ import {
 import { Bear, restPose } from "./bear";
 import { type Bookmark, bookmarkCamera } from "./bookmarks";
 import { CameraRig } from "./camera";
-import { buildDressing, windUniforms } from "./dressing";
+import { buildDressing } from "./dressing";
 import { Landmarks } from "./landmarks";
 import { PALETTE } from "./materials";
-import { Meadow } from "./meadow";
 import { buildProp } from "./props";
 import { Spills } from "./spills";
 import { Stage } from "./stage";
@@ -27,6 +26,7 @@ import { TeaScene } from "./tea";
 import { buildTerrain, buildTrail, Ground } from "./terrain";
 import { createGroundMaterial } from "./terrain-material";
 import { loadPbrSet, setAnisotropy } from "./textures";
+import { buildVegetation, windUniforms } from "./vegetation";
 import { WindStreaks } from "./wind";
 
 // Turns the rules' state into the picture each frame: places the bear on the trail, mirrors
@@ -57,7 +57,6 @@ export class GameScene {
   private reactSide = 1;
   private fetchT = -1;
   private landmarks: Landmarks;
-  private meadow: Meadow;
   private streaks = new WindStreaks();
 
   constructor(
@@ -70,14 +69,12 @@ export class GameScene {
     this.ground = new Ground(this.path);
     const { scene } = this.stage;
     this.ready = this.load(mobile);
-    const dressing = buildDressing(this.ground, this.path, mobile);
+    const dressing = buildDressing(this.path);
     scene.add(dressing.group);
     this.flags = dressing.flags;
     this.spills = new Spills(this.ground);
     scene.add(this.spills.group, this.bear.root, this.tea.group);
     this.landmarks = new Landmarks(this.path);
-    this.meadow = new Meadow(this.ground, this.path, mobile);
-    scene.add(this.meadow.group);
     scene.add(this.landmarks.group, this.streaks.group);
     this.stage.aoHidden.push(this.streaks.group);
     this.rig = new CameraRig(this.stage.camera, this.path);
@@ -98,6 +95,7 @@ export class GameScene {
     this.stage.scene.add(
       buildTerrain(this.ground, new THREE.Vector2(-18, 24), 150, mobile ? 130 : 180, ground),
       buildTrail(this.path, TRAIL_LENGTH, dirt),
+      await buildVegetation(this.ground, this.path, mobile),
     );
   }
 
@@ -321,7 +319,6 @@ export class GameScene {
     );
     this.landmarks.update(g.dir * (0.15 + g.strength), this.clock, this.calm);
     this.spills.update(dt);
-    this.meadow.update(dt, this.calm);
     this.rig.teaTime = Math.max(0, this.teaTime);
     const mode = s.phase === "packing" ? "pack" : s.phase === "tea" ? "tea" : "hike";
     if (this.shot) {

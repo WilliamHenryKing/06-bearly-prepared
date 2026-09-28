@@ -98,8 +98,10 @@ export function createGroundMaterial(sets: GroundSets) {
         vec3 turfArmV = mix(texture2D(turfArm, uvA).rgb, texture2D(turfArm, uvB).rgb, ab);
         vec3 turfN = topNormal(mix(texture2D(turfNormal, uvA).xyz, texture2D(turfNormal, uvB).xyz, ab), N);
         // Macro colour: sun-dried patches and lusher hollows.
-        vec3 dry = vec3(1.12, 1.04, 0.78);
-        vec3 lush = vec3(0.86, 1.02, 0.84);
+        // Re-grade the dry scan toward a summer alpine meadow: greener, a little less yellow.
+        turf = mix(vec3(dot(turf, vec3(0.2126, 0.7152, 0.0722))), turf, 1.25) * vec3(0.74, 1.0, 0.56);
+        vec3 dry = vec3(1.1, 1.02, 0.86);
+        vec3 lush = vec3(0.82, 1.0, 0.86);
         turf *= mix(lush, dry, smoothstep(0.25, 0.8, macro)) * mix(0.9, 1.06, gNoise(P.xz * 0.6));
 
         vec2 uvD = rot(0.4) * P.xz * 0.45;
