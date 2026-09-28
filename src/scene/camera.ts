@@ -57,9 +57,9 @@ export class CameraRig {
       front.y += 1.5;
       const behind = base
         .clone()
-        .addScaledVector(fwd, -2.8)
-        .addScaledVector(right, portrait ? -1.2 : -2.2);
-      behind.y += 2.1;
+        .addScaledVector(fwd, -3)
+        .addScaledVector(right, portrait ? 0.9 : 1.9);
+      behind.y += 2.9;
       pos.copy(front).lerp(behind, e);
       const lookFront = base
         .clone()

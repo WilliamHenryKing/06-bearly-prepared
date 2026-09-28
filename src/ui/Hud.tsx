@@ -99,7 +99,7 @@ export function Hud({ hud, onFetch }: { hud: HudState; onFetch: (id: ItemId) => 
       {hud.dropped.length > 0 && (
         <aside
           aria-label="Spilled items"
-          className="pointer-events-auto absolute inset-x-3 bottom-[108px] flex flex-wrap justify-center gap-2"
+          className="pointer-events-auto absolute inset-x-3 bottom-[108px] flex flex-wrap justify-start gap-2 sm:top-1/2 sm:bottom-auto sm:w-48 sm:-translate-y-1/2 sm:flex-col"
         >
           {hud.dropped.map((d) => (
             <button
