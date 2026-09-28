@@ -67,8 +67,8 @@ export class CameraRig {
         .setY(here.y + 0.5);
       const lookView = base
         .clone()
-        .addScaledVector(fwd, 7)
-        .setY(here.y - 0.6);
+        .addScaledVector(fwd, 12)
+        .setY(here.y - 1.8);
       look.copy(lookFront).lerp(lookView, e);
     } else {
       // Three-quarter follow: close and to one side so the stack fills the frame and its lean
