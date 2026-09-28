@@ -39,7 +39,7 @@ const rand = () => {
   return (seed - 1) / 2147483646;
 };
 
-function scatter(
+export function scatter(
   ground: Ground,
   count: number,
   area: { cx: number; cz: number; size: number },

@@ -18,6 +18,7 @@ import { CameraRig } from "./camera";
 import { buildDressing, windUniforms } from "./dressing";
 import { Landmarks } from "./landmarks";
 import { PALETTE } from "./materials";
+import { Meadow } from "./meadow";
 import { buildProp } from "./props";
 import { Spills } from "./spills";
 import { Stage } from "./stage";
@@ -52,6 +53,7 @@ export class GameScene {
   private reactSide = 1;
   private fetchT = -1;
   private landmarks: Landmarks;
+  private meadow: Meadow;
   private streaks = new WindStreaks();
 
   constructor(
@@ -72,6 +74,8 @@ export class GameScene {
     this.spills = new Spills(this.ground);
     scene.add(this.spills.group, this.bear.root, this.tea.group);
     this.landmarks = new Landmarks(this.path);
+    this.meadow = new Meadow(this.ground, this.path, mobile);
+    scene.add(this.meadow.group);
     scene.add(this.landmarks.group, this.streaks.group);
     this.rig = new CameraRig(this.stage.camera, this.path);
     windUniforms.uSway.value = calm ? 0.25 : 1;
@@ -287,6 +291,7 @@ export class GameScene {
     );
     this.landmarks.update(g.dir * (0.15 + g.strength), this.clock, this.calm);
     this.spills.update(dt);
+    this.meadow.update(dt, this.calm);
     this.rig.teaTime = Math.max(0, this.teaTime);
     const mode = s.phase === "packing" ? "pack" : s.phase === "tea" ? "tea" : "hike";
     this.rig.update(mode, d, s.phase === "tea" ? 0 : s.stats.height, dt, still);
