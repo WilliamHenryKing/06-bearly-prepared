@@ -45,6 +45,7 @@ export class GameScene {
   private seat = 0;
   private silence = false;
   private hush = 0;
+  private clock = 0;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -153,8 +154,17 @@ export class GameScene {
       }
       const slide = s.slides[i] ?? 0;
       const rattle = Math.sin(s.stepPhase * 2 + i * 1.7) * 0.006 * Math.min(1, s.speed);
-      mesh.position.set(slide * 0.3, entry.bottom + Math.abs(rattle), 0);
-      mesh.rotation.set(0, 0, -slide * 0.3 + rattle);
+      // Higher pieces lag the sway a little, so the stack flexes like a noodle.
+      const lag = -s.balance.spin * 0.035 * i;
+      // Past half-way to falling, a piece teeters on its edge: the warning before a spill.
+      const edge = Math.max(0, (Math.abs(slide) - 0.45) / 0.55);
+      const teeter = this.calm ? 0 : Math.sin(this.clock * 26 + i * 2) * 0.16 * edge;
+      mesh.position.set(slide * 0.34, entry.bottom + Math.abs(rattle) + Math.abs(teeter) * 0.08, 0);
+      mesh.rotation.set(
+        0,
+        0,
+        -slide * 0.35 - edge * Math.sign(slide) * 0.2 + rattle + lag + teeter,
+      );
     });
     // Spills that the rules no longer list were recovered (fetch or checkpoint).
     for (const id of ["kettle", "teacups", "biscuits", "blanket", "chair", "lamp"] as ItemId[]) {
@@ -163,6 +173,7 @@ export class GameScene {
   }
 
   frame(s: RunState, dt: number) {
+    this.clock += dt;
     this.syncStack(s);
     let d = s.d;
     let still = false;
