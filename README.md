@@ -13,7 +13,7 @@
   <img alt="Bun" src="https://img.shields.io/badge/Bun-c84b3c?style=for-the-badge&logo=bun&logoColor=white">
 </p>
 
-**A furry bear packs a kettle, a folding chair and a standard lamp for a very short hike, and you have to keep the whole teetering stack on its back all the way to a civilised cup of tea, straight through a pond.**
+**A furry bear packs a kettle, a folding chair and a standard lamp for a short hike. You have to keep the whole teetering stack on its back all the way to a civilised cup of tea above an alpine lake. The way goes through a pond, over a hillside and fallen logs, past a crowd glued to their phones, under low orchard boughs and away from a very cross goose.**
 
 <img src="docs/readme/preview.gif" alt="Packing the kit beside the furry bear, then walking the tall stack up the meadow path toward the hairpin as the load sways" width="800">
 
@@ -25,13 +25,16 @@ Pack the stack, then walk it up the trail. Leaning pushes the load the way you l
 
 | Action | Keyboard | Touch or mouse |
 | --- | --- | --- |
-| Walk (hold) | <kbd>W</kbd> / <kbd>↑</kbd> / <kbd>Space</kbd> | Hold **Walk** |
+| Walk (hold) | <kbd>W</kbd> / <kbd>↑</kbd> | Hold **Walk** |
+| Jump | <kbd>Space</kbd> | **⤒ Jump** |
 | Lean left | <kbd>A</kbd> / <kbd>←</kbd> | Hold **◀ Lean** |
 | Lean right | <kbd>D</kbd> / <kbd>→</kbd> | Hold **Lean ▶** |
 | Pack, reorder, fetch | <kbd>Tab</kbd> + <kbd>Enter</kbd> | Tap the item, ▲ ▼, or **Fetch** |
 | Mute | <kbd>M</kbd> | Speaker button, top left |
 
 The gauge is green while nothing slides, amber while the loosest piece is slipping and red at the topple edge. Spilled items wait in the grass under a marker; fetching one costs a few seconds, and a topple sends you back to the last flag with the load you had there.
+
+On the hillside, lean uphill. Jump the logs with a run-up, or trip over them. On the green, wait for a gap: nobody there looks up from their phone. In the orchard, lean the stack away from the low boughs. On Goose Lane, do not stop.
 
 ## What's inside
 
@@ -41,11 +44,21 @@ The gauge is green while nothing slides, amber while the loosest piece is slippi
 - **A load you can read.** Weight, height and order change how the stack sways: heavy and low is steady, a lamp on top is magnificently unwise, and anything on the blanket grips better.
 <p align="center"><img src="docs/readme/pond.gif" alt="The bear wades belly-deep through the reedy pond, ripples spreading from each step, and climbs out dark and dripping" width="560"></p>
 
-- **Three authored obstacles.** A signposted hairpin that flings the load outward, a log crossing that lurches it toward each log's low end, and a cliff ledge where the windsock and wind streaks warn you before every gust.
+- **A valley rendered on a GPU, offline.** The mountains were grown in two steps: tectonic uplift against river erosion, then 60 million raindrops of droplet erosion on an RTX 2060 (CUDA, through NVIDIA Warp). The sky is an 8K panorama of cumulus, path-traced through the game's own atmosphere. Sun, sky light, bounce and cloud shadows are baked into the land. The game streams the result as compact textures, so the view costs almost nothing to draw. See [`tools/bake/`](tools/bake/README.md).
+- **Seven stretches, each with its own trouble:**
+  - a hillside that tips the load downhill;
+  - a hairpin that flings it outward;
+  - logs to jump, or faceplant over while the whole load carries on without you;
+  - a pond to wade;
+  - a village green of fourteen people glued to their phones;
+  - an orchard whose low boughs catch a tall stack;
+  - Goose Lane, where a goose wakes, honks and chases you, pecking, and steals the biscuits from anyone who dawdles.
+
+  The ledge at the end has a windsock and wind streaks that warn before every gust.
 - **Physical comedy with fair warnings.** Pieces lag, slide and teeter on the edge before they go; the bear glances up, reaches for them and throws its arms up when something tumbles into the grass.
 - **Recoverable mistakes.** Fetch spills for a few seconds each; checkpoint flags remember your load so one silly topple never erases the run.
 - **A finale built from what arrived.** The bear sits, the kettle pours and the camera turns to the valley: a neat cup, a respectable picnic or an elaborate little lounge. Missing biscuits get a moment of silence.
-- **Sound that follows the load.** Footsteps on every footfall of the walk, splashes in the pond and a lapping bed as you near it, a shake-off, creaks as things start to slide, a thump for every spill, wind that swells before each gust and a synthesised kettle whistle.
+- **Sound that follows the load.** Footsteps on every footfall of the walk, splashes in the pond and a lapping bed as you near it, a shake-off, creaks as things start to slide, a thump for every spill, wind that swells before each gust, and synthesised whistles, honks, phone pings, rustles and thuds.
 - **Plays anywhere.** Desktop and phone layouts, mouse, touch and keyboard, visible focus, and `prefers-reduced-motion` respected.
 
 <table>
@@ -61,12 +74,13 @@ The gauge is green while nothing slides, amber while the loosest piece is slippi
 
 ## Built with
 
-three.js 0.186 (used directly, no React Three Fiber), React 19, strict TypeScript, Vite, GSAP, Tailwind CSS 4, Biome, Bun and Playwright. The bear, props and pond are authored in code; the meadow wears CC0 scans from Poly Haven, and the sounds are CC0 (see Credits).
+three.js 0.186 (used directly, no React Three Fiber), React 19, strict TypeScript, Vite, GSAP, Tailwind CSS 4, Biome, Bun and Playwright. The bear, props, pond, village, orchard and goose are authored in code. The meadow wears CC0 scans from Poly Haven, the villagers are CC0 characters by Quaternius, and the sounds are CC0 (see Credits). The vista was rendered offline with NVIDIA Warp (CUDA) and Bun.
 
 - **Load and balance model.** The stack is an inverted pendulum about the bear's hips: its mass, centre-of-mass height and inertia come from what you packed and in what order. Corners, logs and gusts add torque, your lean shifts the hips, and each piece slides once the tilt passes its own grip. The rules are pure TypeScript in `src/game/`, unit-tested and simulated headlessly to tune difficulty.
 - **Stack-first follow camera.** A three-quarter camera sits close over one shoulder so the stack fills the frame, blends toward where the path is heading so obstacles are seen early, and swings out over the drop on the ledge.
 - **A procedural furred character.** The body is a signed-distance sculpt meshed by surface nets in a Web Worker, skinned to a 19-bone rig by the sculpt's own part fields, and painted with fur length, colour and comb direction per vertex (`src/scene/bear-body.ts`). The fur is a shell shader over `MeshPhysicalMaterial` (`src/scene/fur.ts`): a bind-space strand lattice, clumping, Kajiya-Kay glints, self-occlusion, and distance filtering so it never sparkles. Wet fur darkens, clumps into points and lies flat.
-- **One lighting model.** A physical sky and a sun in lux, the sky baked to a PMREM environment, aerial perspective, GTAO, thresholded bloom, Neutral tone mapping and SMAA. Scanned turf, rocky trail, rock and bark; instanced grass cards and firs that bend in the gusts.
+- **One lighting model.** A physical sky and a sun in lux, aerial perspective that thins with height and glows toward the sun, GTAO, thresholded bloom, Neutral tone mapping and SMAA. The baked sky panorama is also the environment light, so reflections on the lake match the clouds. Scanned turf, rocky trail, rock and bark. Scanned grass clumps, sorrel, ferns and flowers by the path, grass cards beyond, and firs that bend in the gusts.
+- **The rules decide, the scene obeys.** Crowd routes, branch heights, the goose's chase, jumps and log collisions are pure functions in `src/game/`. The villagers stand exactly where the rules put them, and the browser test jumps the logs like a player and checks it never tripped.
 - **Adaptive quality.** When frames run long, GTAO goes first, then the fur thins, then resolution drops. Phones get fewer fur shells and a coarser body from the start.
 
 ## Run it locally
@@ -96,6 +110,11 @@ Visual assets (all CC0 1.0, from [Poly Haven](https://polyhaven.com)):
 | `textures/bark_brown_02`, `distressed_painted_planks`, `hessian_230`, `wool_boucle` | [bark brown 02](https://polyhaven.com/a/bark_brown_02), [distressed painted planks](https://polyhaven.com/a/distressed_painted_planks), [hessian 230](https://polyhaven.com/a/hessian_230), [wool boucle](https://polyhaven.com/a/wool_boucle) |
 | `textures/grass_medium_02` and `shrub_02` card atlases | [grass medium 02](https://polyhaven.com/a/grass_medium_02), [shrub 02](https://polyhaven.com/a/shrub_02) |
 | `models/rock_moss_set_01.glb`, `models/dandelion_01.glb` | [rock moss set 01](https://polyhaven.com/a/rock_moss_set_01), [dandelion 01](https://polyhaven.com/a/dandelion_01) |
+| `models/veg/*.glb` and `textures/veg/*` (welded, compressed, alpha merged) | [grass medium 01](https://polyhaven.com/a/grass_medium_01), [grass medium 02](https://polyhaven.com/a/grass_medium_02), [grass bermuda 01](https://polyhaven.com/a/grass_bermuda_01), [shrub sorrel 01](https://polyhaven.com/a/shrub_sorrel_01), [fern 02](https://polyhaven.com/a/fern_02), [flower heliophila](https://polyhaven.com/a/flower_heliophila), [moss 01](https://polyhaven.com/a/moss_01) |
+
+Characters (CC0 1.0): `models/people/*.glb`, fourteen villagers and their shared animation clips, from Quaternius's [Ultimate Modular Characters](https://quaternius.com/packs/ultimatemodularcharacters.html) and [Ultimate Modular Women](https://quaternius.com/packs/ultimatemodularwomen.html), re-exported with meshopt compression.
+
+The vista (`public/vista/`) is original: rendered by this repository's `tools/bake/` from its own designed land.
 
 Audio (all CC0 1.0, https://creativecommons.org/publicdomain/zero/1.0/; trimmed, looped and
 re-encoded to MP3 for this project):

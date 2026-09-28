@@ -23,7 +23,7 @@ import { type Celestial, celestial } from "./render/sky-model";
 /** A warm mid-afternoon. */
 export const HOUR = 17.4;
 /** Meteorological visibility for the aerial perspective, metres (a hazy summer valley). */
-const VISIBILITY = 26000;
+const VISIBILITY = 38000;
 /** Scale height of the haze (metres): the air near the valley floor is the densest. */
 const FOG_SCALE = 900;
 const SHADOW_RADIUS = 9;

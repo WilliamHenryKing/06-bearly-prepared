@@ -4,6 +4,8 @@
 //
 //   node tools/batch/game-film.mjs <out-dir> <bookmark> <seconds> [fps=30] [keys=KeyW] [hold]
 //   ("hold" keeps the bookmark's fixed camera instead of the follow camera)
+//   FILM_PLAN=jumptrip: walk, jump the first log cleanly and trip on the second;
+//   FILM_PLAN=goose: stand still while the goose charges in, then walk on.
 import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 
@@ -42,8 +44,25 @@ await page
   .locator("canvas#stage")
   .click({ position: { x: 5, y: 5 }, force: true })
   .catch(() => {});
-for (const k of keys) await page.keyboard.down(k);
+const plan = process.env.FILM_PLAN ?? "";
+const LOG_JUMP = 47;
+let walking = plan !== "goose";
+if (walking) for (const k of keys) await page.keyboard.down(k);
+let jumped = false;
 for (let i = 0; i < frames; i++) {
+  if (plan === "jumptrip" && !jumped) {
+    const r = await page.evaluate(() => window.__VISUAL_TEST__.run());
+    if (LOG_JUMP - r.d > 0 && LOG_JUMP - r.d < 0.25 + r.speed * 0.12 && !r.airborne) {
+      jumped = true;
+      await page.keyboard.down("Space");
+      await page.evaluate((dt) => window.__VISUAL_TEST__.step(dt), 1 / fps);
+      await page.keyboard.up("Space");
+    }
+  }
+  if (plan === "goose" && !walking && i >= fps * 6.5) {
+    walking = true;
+    for (const k of ["KeyW"]) await page.keyboard.down(k);
+  }
   await page.evaluate((dt) => window.__VISUAL_TEST__.step(dt), 1 / fps);
   await page.screenshot({ path: `${out}/frames/f_${String(i).padStart(4, "0")}.png` });
 }

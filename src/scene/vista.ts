@@ -85,6 +85,47 @@ function farLand(detail: number) {
   return mesh;
 }
 
+/** Three independent octaves of tiling value noise (RGB), for close-up surface detail. */
+function detailNoise() {
+  const n = 256;
+  const data = new Uint8Array(n * n * 4);
+  const rnd = (i: number, j: number, c: number, p: number) => {
+    let h = (((i % p) + p) % p) * 374761393 + (((j % p) + p) % p) * 668265263 + c * 1442695041;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  };
+  for (let j = 0; j < n; j++)
+    for (let i = 0; i < n; i++)
+      for (let c = 0; c < 3; c++) {
+        let v = 0;
+        let amp = 0.5;
+        for (const cells of [8, 16, 32, 64]) {
+          const x = (i / n) * cells;
+          const y = (j / n) * cells;
+          const xi = Math.floor(x);
+          const yi = Math.floor(y);
+          const fx = x - xi;
+          const fy = y - yi;
+          const u = fx * fx * (3 - 2 * fx);
+          const w = fy * fy * (3 - 2 * fy);
+          const a = rnd(xi, yi, c + cells, cells);
+          const b = rnd(xi + 1, yi, c + cells, cells);
+          const cc = rnd(xi, yi + 1, c + cells, cells);
+          const d = rnd(xi + 1, yi + 1, c + cells, cells);
+          v += amp * (a + (b - a) * u + (cc - a) * w + (a - b - cc + d) * u * w);
+          amp *= 0.5;
+        }
+        data[(j * n + i) * 4 + c] = Math.round((v / 0.9375) * 255);
+      }
+  const t = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.magFilter = THREE.LinearFilter;
+  t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true;
+  t.needsUpdate = true;
+  return t;
+}
+
 /** The baked far land: a polar mesh on the eroded heights, lit by the baked light. */
 function bakedLand(a: VistaAssets, detail: number) {
   // Rings as far apart as the spokes: silhouettes stay crisp on the far ranges.
@@ -157,6 +198,8 @@ function bakedLand(a: VistaAssets, detail: number) {
       #include <fog_pars_fragment>
       uniform sampler2D innerLight;
       uniform sampler2D outerLight;
+      uniform sampler2D innerMat;
+      uniform sampler2D detailNoise;
       uniform vec3 innerRect;
       uniform vec3 outerRect;
       uniform float lightScale;
@@ -171,6 +214,18 @@ function bakedLand(a: VistaAssets, detail: number) {
         if (edge > 0.0) {
           vec3 fine = texture2D(innerLight, vec2(ui.x, 1.0 - ui.y)).rgb;
           col = mix(col, fine, smoothstep(0.0, 150.0, edge));
+          // Close up, the baked light (2 m texels) gains surface detail by material: strata and
+          // grit on rock, crowns and gaps in forest, tussocks in grass. Fades out by 900 m.
+          float near = 1.0 - smoothstep(220.0, 900.0, distance(vWorld, cameraPosition));
+          if (near > 0.0) {
+            vec4 m = texture2D(innerMat, vec2(ui.x, 1.0 - ui.y));
+            float n1 = texture2D(detailNoise, vWorld.xz / 3.1).r - 0.5;
+            float n2 = texture2D(detailNoise, vWorld.xz / 11.3 + 0.37).g - 0.5;
+            float n3 = texture2D(detailNoise, vec2(vWorld.x / 7.0, vWorld.y / 1.6) + 0.71).b - 0.5;
+            float grass = max(0.0, 1.0 - m.r - m.g - m.b);
+            float d = m.r * (n1 * 0.45 + n3 * 0.55) + m.g * (n1 * 0.9 + n2 * 0.4) + grass * (n1 * 0.22 + n2 * 0.18) + m.b * n1 * 0.12;
+            col *= 1.0 + d * near;
+          }
         }
         gl_FragColor = vec4(col * lightScale * hush, 1.0);
         #include <fog_fragment>
@@ -183,6 +238,8 @@ function bakedLand(a: VistaAssets, detail: number) {
   });
   mat.uniforms.innerLight = { value: a.innerLight };
   mat.uniforms.outerLight = { value: a.outerLight };
+  mat.uniforms.innerMat = { value: a.innerMat };
+  mat.uniforms.detailNoise = { value: detailNoise() };
   const mesh = new THREE.Mesh(g, mat);
   mesh.frustumCulled = false;
   mesh.name = "baked-land";

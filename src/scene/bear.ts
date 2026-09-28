@@ -239,7 +239,13 @@ float noseCells(vec3 p) {
 }
 
 export class Bear {
-  readonly root = new THREE.Group();
+  readonly root = (() => {
+    const g = new THREE.Group();
+    // Heading first, then pitch and roll in the bear's own frame: a trip pitches it onto its
+    // face whichever way the trail runs.
+    g.rotation.order = "YXZ";
+    return g;
+  })();
   /** Carries the pack and stack; rolled by the simulated tilt about the hips. */
   readonly load = new THREE.Group();
   /** Resolves when the furred body is in place. */

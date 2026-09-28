@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { BRANCH_REACH, BRANCHES, GOOSE, type GooseState } from "../game/obstacles";
 import { GREEN, LANE, ORCHARD, type PathPoint, pointAt } from "../game/trail";
 import { paintedWood } from "./materials";
+import { loadTexture } from "./textures";
+import { leafDome, swaying } from "./vegetation";
 
 // The three new stretches of the walk, dressed to match what the rules test there:
 // - the village green: benches, lamp posts strung with bunting and a sign that explains why
@@ -16,12 +18,30 @@ type Ground = (x: number, z: number) => number;
 
 const wood = paintedWood(0x6d4a2c);
 const iron = new THREE.MeshStandardMaterial({ color: 0x1f3a2c, roughness: 0.45, metalness: 0.6 });
-const leafMat = new THREE.MeshStandardMaterial({
-  color: 0x3f6b2a,
-  roughness: 0.85,
-  flatShading: true,
+// Foliage from the meadow's scanned leaf-card atlas (the same as its shrubs), swaying in the
+// wind; bark from the scanned bark set. Textures arrive shortly after the meshes are built.
+const leafMat = swaying(
+  new THREE.MeshStandardMaterial({
+    color: 0x9cc57a,
+    roughness: 0.75,
+    alphaTest: 0.45,
+    side: THREE.DoubleSide,
+  }),
+  2.6,
+  0.25,
+);
+const barkMat = new THREE.MeshStandardMaterial({ color: 0xe6ddd2, roughness: 0.95 });
+void loadTexture("textures/shrub_02/shrub_02_cards.webp", true).then((t) => {
+  leafMat.map = t;
+  leafMat.needsUpdate = true;
 });
-const barkMat = new THREE.MeshStandardMaterial({ color: 0x5b4431, roughness: 0.95 });
+void loadTexture("textures/bark_brown_02/bark_brown_02_diff.webp", true).then((t) => {
+  const bark = t.clone();
+  bark.repeat.set(1, 3);
+  bark.needsUpdate = true;
+  barkMat.map = bark;
+  barkMat.needsUpdate = true;
+});
 const appleMat = new THREE.MeshStandardMaterial({ color: 0xb8231c, roughness: 0.35 });
 
 /** A point beside the path: `side` metres to the walker's right, standing on the ground. */
@@ -186,34 +206,47 @@ function bunting(a: THREE.Vector3, b: THREE.Vector3) {
   return g;
 }
 
+const domes = [leafDome(0.95, 26), leafDome(0.8, 22), leafDome(1.05, 30)];
+
 function appleTree(rand: () => number) {
   const g = new THREE.Group();
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.16, 1.9, 8), barkMat);
-  trunk.position.y = 0.95;
-  trunk.rotation.z = (rand() - 0.5) * 0.12;
+  const lean = (rand() - 0.5) * 0.14;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.14, 1.7, 9), barkMat);
+  trunk.position.y = 0.85;
+  trunk.rotation.z = lean;
   trunk.castShadow = true;
   g.add(trunk);
-  const crown = new THREE.Group();
-  const blob = new THREE.IcosahedronGeometry(1, 1);
-  for (let i = 0; i < 6; i++) {
-    const m = new THREE.Mesh(blob, leafMat);
-    const a = (i / 6) * Math.PI * 2 + rand();
-    const r = i === 0 ? 0 : 0.7 + rand() * 0.35;
-    m.position.set(Math.cos(a) * r, 2.35 + rand() * 0.5 + (i === 0 ? 0.35 : 0), Math.sin(a) * r);
-    m.scale.setScalar(i === 0 ? 1.05 : 0.7 + rand() * 0.25);
-    m.castShadow = true;
-    crown.add(m);
+  // Three limbs forking from the top of the trunk, each carrying a leafy dome.
+  const top = new THREE.Vector3(Math.sin(-lean) * 1.7, 1.65, 0);
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 + rand() * 1.2;
+    const out = new THREE.Vector3(Math.cos(a) * 0.55, 0.55 + rand() * 0.25, Math.sin(a) * 0.55);
+    const end = top.clone().add(out);
+    const limb = new THREE.Mesh(
+      new THREE.TubeGeometry(new THREE.LineCurve3(top, end), 1, 0.045, 6, false),
+      barkMat,
+    );
+    limb.castShadow = true;
+    const dome = new THREE.Mesh(domes[i % domes.length] as THREE.BufferGeometry, leafMat);
+    dome.position.copy(end).add(new THREE.Vector3(0, -0.45, 0));
+    dome.rotation.y = rand() * Math.PI * 2;
+    dome.scale.setScalar(0.9 + rand() * 0.3);
+    dome.castShadow = true;
+    g.add(limb, dome);
   }
-  g.add(crown);
+  const crownTop = new THREE.Mesh(domes[2] as THREE.BufferGeometry, leafMat);
+  crownTop.position.copy(top).add(new THREE.Vector3(0, 0.35, 0));
+  crownTop.castShadow = true;
+  g.add(crownTop);
   // Apples on the outside of the crown.
-  const apple = new THREE.SphereGeometry(0.055, 8, 6);
-  const apples = new THREE.InstancedMesh(apple, appleMat, 26);
+  const apple = new THREE.SphereGeometry(0.05, 10, 8);
+  const apples = new THREE.InstancedMesh(apple, appleMat, 22);
   const m4 = new THREE.Matrix4();
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < 22; i++) {
     const a = rand() * Math.PI * 2;
-    const y = 1.9 + rand() * 1.1;
-    const r = 1.25 + rand() * 0.35 - Math.abs(y - 2.5) * 0.4;
-    m4.makeTranslation(Math.cos(a) * r, y, Math.sin(a) * r);
+    const y = 1.75 + rand() * 1.0;
+    const r = 0.95 + rand() * 0.3 - Math.abs(y - 2.3) * 0.35;
+    m4.makeTranslation(top.x + Math.cos(a) * r, y, Math.sin(a) * r);
     apples.setMatrixAt(i, m4);
   }
   apples.castShadow = true;
@@ -236,21 +269,18 @@ function bough(side: number, height: number, rand: () => number) {
   const limb = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.045, 6, false), barkMat);
   limb.castShadow = true;
   g.add(limb);
-  const blob = new THREE.IcosahedronGeometry(1, 1);
-  for (let i = 0; i < 5; i++) {
-    const t = 0.55 + i * 0.11;
+  // Leafy sprays along the outer half, their lowest leaves at the rule's height.
+  const spray = leafDome(0.42, 14);
+  for (let i = 0; i < 4; i++) {
+    const t = 0.58 + i * 0.13;
     const p = curve.getPoint(Math.min(1, t));
-    const m = new THREE.Mesh(blob, leafMat);
-    const s = 0.24 + rand() * 0.1;
-    m.scale.set(s * 1.3, s, s * 1.1);
-    m.position.set(
-      p.x,
-      Math.max(height + s * 0.95, p.y + (rand() - 0.3) * 0.1),
-      p.z + (rand() - 0.5) * 0.3,
-    );
+    const m = new THREE.Mesh(spray, leafMat);
+    m.position.set(p.x, Math.max(height - 0.12, p.y - 0.3), p.z + (rand() - 0.5) * 0.25);
+    m.rotation.y = rand() * Math.PI * 2;
     m.castShadow = true;
     g.add(m);
   }
+
   const apple = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), appleMat);
   apple.position.set(tip.x + side * 0.25, height + 0.05, 0.1);
   apple.name = "apple";
@@ -423,12 +453,13 @@ export class Village {
     ] as const)
       put(bench(), d, side, side > 0 ? Math.PI / 2 : -Math.PI / 2);
     const tops: Record<string, THREE.Vector3> = {};
+    // Lamps stand well back from the path, clear of the follow camera's swing.
     for (const d of [76, 86, 96]) {
-      for (const side of [-2.4, 2.4]) {
+      for (const side of [-3.4, 3.4]) {
         const b = put(lamp(), d, side);
         tops[`${d}:${side}`] = new THREE.Vector3(b.x, b.y + 3.05, b.z);
       }
-      const across = bunting(tops[`${d}:-2.4`] as THREE.Vector3, tops[`${d}:2.4`] as THREE.Vector3);
+      const across = bunting(tops[`${d}:-3.4`] as THREE.Vector3, tops[`${d}:3.4`] as THREE.Vector3);
       this.group.add(across);
       across.traverse((o) => {
         if ((o as THREE.Mesh).isMesh && o.userData.phase !== undefined)
@@ -439,8 +470,8 @@ export class Village {
     // The orchard: a row of apple trees each side, and the five low boughs.
     put(signBoard(["Orchard", "low branches!"], "#8a5a2b"), ORCHARD.from - 3, 1.45);
     for (let d = ORCHARD.from + 1; d < ORCHARD.to - 1; d += 4.6) {
-      put(appleTree(rand), d, -3.4 - rand() * 0.6, rand() * 6);
-      put(appleTree(rand), d + 2.3, 3.4 + rand() * 0.6, rand() * 6);
+      put(appleTree(rand), d, -4.1 - rand() * 0.6, rand() * 6);
+      put(appleTree(rand), d + 2.3, 4.1 + rand() * 0.6, rand() * 6);
     }
     for (const br of BRANCHES) {
       const p = pointAt(path, br.at);
@@ -451,7 +482,7 @@ export class Village {
       this.boughs.push(g);
       this.shake.push(0);
       // Its tree.
-      put(appleTree(rand), br.at, br.side * 3.4);
+      put(appleTree(rand), br.at, br.side * 3.5);
     }
 
     // Goose Lane: fences both sides, a gate at each end, and a warning.

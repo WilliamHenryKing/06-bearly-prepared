@@ -338,6 +338,11 @@ export class GameScene {
 
   private syncStack(s: RunState) {
     if (s.phase === "tea") return;
+    // Spills that the rules no longer list were recovered (fetched, or restored at a flag after
+    // a topple or a trip): the pieces lying in the grass puff away.
+    for (const id of ["kettle", "teacups", "biscuits", "blanket", "chair", "lamp"] as ItemId[]) {
+      if (!s.dropped.some((x) => x.id === id)) this.spills.take(id);
+    }
     for (const [id, mesh] of this.stackMeshes) {
       if (!s.stack.includes(id)) {
         this.bear.load.remove(mesh);
@@ -368,10 +373,6 @@ export class GameScene {
         -slide * 0.35 - edge * Math.sign(slide) * 0.2 + rattle + lag + teeter,
       );
     });
-    // Spills that the rules no longer list were recovered (fetch or checkpoint).
-    for (const id of ["kettle", "teacups", "biscuits", "blanket", "chair", "lamp"] as ItemId[]) {
-      if (!s.dropped.some((x) => x.id === id) && !this.stackMeshes.has(id)) this.spills.take(id);
-    }
   }
 
   frame(s: RunState, dt: number) {

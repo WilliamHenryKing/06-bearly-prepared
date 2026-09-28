@@ -20,7 +20,11 @@ export const windUniforms = {
 };
 
 /** Bend the upper part of each instance; `height` is the height at which bending is full. */
-function swaying<T extends THREE.MeshStandardMaterial>(mat: T, height: number, stiffness = 1) {
+export function swaying<T extends THREE.MeshStandardMaterial>(
+  mat: T,
+  height: number,
+  stiffness = 1,
+) {
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, windUniforms);
     shader.vertexShader = shader.vertexShader
@@ -127,7 +131,7 @@ function cardClump(width: number, height: number, cards: number) {
 }
 
 /** A dome of small leaf cards; UVs sample only the leaf part of the shrub atlas. */
-function leafDome(radius: number, cards: number) {
+export function leafDome(radius: number, cards: number) {
   const parts: THREE.BufferGeometry[] = [];
   for (let i = 0; i < cards; i++) {
     const g = new THREE.PlaneGeometry(radius * 0.9, radius * 0.9);

@@ -153,6 +153,26 @@ export const BOOKMARKS: Record<string, Bookmark> = {
     viewport: DESK,
   },
   /** Goose Lane. */
+  /** The log crossing from the side: a clean jump, then a trip. */
+  logs: {
+    d: 44.2,
+    load: ["kettle", "blanket", "teacups"],
+    tilt: 0.02,
+    eye: [5.2, 5.6, 1.7],
+    look: [5.2, 0, 0.3],
+    fov: 54,
+    viewport: DESK,
+  },
+  /** Goose Lane side-on: the goose charges in from behind. */
+  goose: {
+    d: 139,
+    load: TALL,
+    tilt: 0.03,
+    eye: [-1.2, 5.2, 1.7],
+    look: [-1.6, 0, 0.35],
+    fov: 52,
+    viewport: DESK,
+  },
   lane: {
     d: 146,
     load: TALL,
