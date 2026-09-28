@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import { type ItemId, item } from "../game/items";
-import { CHECKPOINTS, LEDGE, LOGS, TRAIL_LENGTH } from "../game/trail";
+import { CHECKPOINTS, GREEN, LANE, LEDGE, LOGS, ORCHARD, TRAIL_LENGTH } from "../game/trail";
 import { Controls } from "./Controls";
 import { ItemIcon } from "./ItemIcon";
 import type { HudState } from "./store";
 import { TiltMeter } from "./TiltMeter";
 
-// The hike: trail progress with its three obstacles, the load gauge, gust warnings,
+// The hike: trail progress with its obstacles, the load gauge, gust warnings,
 // spilled items waiting to be fetched and the hold-to-act controls.
 
 const MARKS = [
   { at: 22, label: "Hairpin" },
   { at: (LOGS[0]?.at ?? 47) + 6, label: "Logs" },
+  { at: (GREEN.from + GREEN.to) / 2, label: "Green" },
+  { at: (ORCHARD.from + ORCHARD.to) / 2, label: "Orchard" },
+  { at: (LANE.from + LANE.to) / 2, label: "Goose" },
   { at: (LEDGE.from + LEDGE.to) / 2, label: "Ledge" },
 ];
 
@@ -19,6 +22,9 @@ const ZONE_NAMES: Record<HudState["zone"], string> = {
   meadow: "Meadow path",
   hairpin: "The hairpin",
   logs: "Log steps",
+  green: "The village green",
+  orchard: "The orchard",
+  lane: "Goose Lane",
   ledge: "Windy ledge",
   lookout: "Nearly there",
 };

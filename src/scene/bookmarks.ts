@@ -91,6 +91,16 @@ export const BOOKMARKS: Record<string, Bookmark> = {
     viewport: DESK,
     wet: [0.34, 1, 0.3, 0],
   },
+  /** The trailhead, for films of the opening stretch. */
+  start: {
+    d: 0.5,
+    load: ["kettle", "blanket", "teacups"],
+    tilt: 0,
+    eye: [-4, 0.6, 2.4],
+    look: [5, 0, 0.3],
+    fov: 42,
+    viewport: DESK,
+  },
   /** Start of the pond film: walking in from the meadow. */
   "pond-approach": {
     d: 30.5,
