@@ -2,15 +2,16 @@ import * as THREE from "three";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { LEDGE, type PathPoint, TRAIL_LENGTH } from "../game/trail";
+import { GREEN, LANE, LEDGE, type PathPoint, TRAIL_LENGTH } from "../game/trail";
 import type { Ground } from "./terrain";
 import { loadPbrSet, loadTexture } from "./textures";
 import { buildTreeVariant, treeMaterials } from "./trees";
 
 // The meadow's living layer, all instanced with 15-25 % scale, free rotation and slight hue
-// jitter: alpha-tested grass cards cut from a scanned blade atlas, shrub card clusters, scanned
-// dandelions and mossy rocks, and modelled conifers from the trail out to the far tree line.
-// Grass, shrubs and crowns bend in a shared wind that leans with each gust.
+// jitter: scanned grass (Poly Haven, CC0) in full clumps by the path and low tufts further out,
+// sorrel, ferns and flowers among it, alpha-tested grass cards as distant cover, shrub card
+// clusters, scanned dandelions and mossy rocks, and modelled conifers from the trail out to the
+// far tree line. Grass, shrubs and crowns bend in a shared wind that leans with each gust.
 
 export const windUniforms = {
   uTime: { value: 0 },
@@ -70,7 +71,7 @@ function scatter(
   n: number,
   radius: number,
   accept: (s: Spot) => boolean,
-  centre = { x: -18, z: 24 },
+  centre = { x: -73, z: 27 },
 ) {
   const out: Spot[] = [];
   for (let tries = 0; out.length < n && tries < n * 40; tries++) {
@@ -153,6 +154,28 @@ function leafDome(radius: number, cards: number) {
   return geo;
 }
 
+/** A Poly Haven scan's own maps (colour with alpha, normal, roughness), swaying in the wind. */
+async function scanMaterial(id: string, height: number, stiffness = 1) {
+  const base = `textures/veg/${id}/${id}`;
+  const [map, normalMap, roughnessMap] = await Promise.all([
+    loadTexture(`${base}_diff.webp`, true),
+    loadTexture(`${base}_nor.webp`, false),
+    loadTexture(`${base}_arm.webp`, false),
+  ]);
+  const mat = new THREE.MeshStandardMaterial({
+    map,
+    normalMap,
+    roughnessMap,
+    roughness: 1,
+    metalness: 0,
+    alphaTest: 0.5,
+    side: THREE.DoubleSide,
+  });
+  // Soft blade edges under MSAA (the high tier); a plain cut-out otherwise.
+  mat.alphaToCoverage = true;
+  return swaying(mat, height, stiffness);
+}
+
 async function loadGlb(url: string) {
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
@@ -177,19 +200,140 @@ async function loadGlb(url: string) {
   });
 }
 
+/** Scan variants share one material; spread the spots across them. */
+function scanned(
+  group: THREE.Group,
+  variants: { geometry: THREE.BufferGeometry }[],
+  mat: THREE.Material,
+  spots: Spot[],
+  scale: (s: Spot) => number,
+  tint: () => THREE.Color,
+  thinnable: THREE.InstancedMesh[] | null,
+) {
+  variants.forEach((v, j) => {
+    const mine = spots.filter((_, i) => i % variants.length === j);
+    const mesh = instanced(v.geometry, mat, mine.length, false);
+    mine.forEach((s, i) => {
+      place(mesh, i, s, scale(s), 0.02, 0.2);
+      mesh.setColorAt(i, tint());
+    });
+    group.add(mesh);
+    thinnable?.push(mesh);
+  });
+}
+
+/** Near-path scanned grass, which the frame-time governor may thin on a slow GPU. */
+export const thinGrass: THREE.InstancedMesh[] = [];
+
 export async function buildVegetation(ground: Ground, path: readonly PathPoint[], mobile: boolean) {
   const group = new THREE.Group();
   const k = mobile ? 0.4 : 1;
   const onTrail = (s: Spot) => s.d < TRAIL_LENGTH + 2;
+  // The green, the orchard and the lane have their own planting (and the lookout its view).
+  const wild = (s: Spot) =>
+    !(s.d > GREEN.from - 4 && s.d < LANE.to + 4 && s.dist < 26) && s.d < TRAIL_LENGTH - 4;
   const offLedgeDrop = (s: Spot) => !(s.d > LEDGE.from - 2 && s.d < LEDGE.to + 2 && s.dist > 1.2);
 
-  const [grassTex, shrubTex, bark, rocks, dandelions] = await Promise.all([
-    loadTexture("textures/grass_medium_02/grass_medium_02_cards.webp", true),
-    loadTexture("textures/shrub_02/shrub_02_cards.webp", true),
-    loadPbrSet("bark_brown_02"),
-    loadGlb("models/rock_moss_set_01.glb"),
-    loadGlb("models/dandelion_01.glb"),
+  const [grassTex, shrubTex, bark, rocks, dandelions, clumps, tufts2, sorrel, ferns, heliophila] =
+    await Promise.all([
+      loadTexture("textures/grass_medium_02/grass_medium_02_cards.webp", true),
+      loadTexture("textures/shrub_02/shrub_02_cards.webp", true),
+      loadPbrSet("bark_brown_02"),
+      loadGlb("models/rock_moss_set_01.glb"),
+      loadGlb("models/dandelion_01.glb"),
+      loadGlb("models/veg/grass_medium_02.glb"),
+      loadGlb("models/veg/grass_bermuda_01.glb"),
+      loadGlb("models/veg/shrub_sorrel_01.glb"),
+      loadGlb("models/veg/fern_02.glb"),
+      loadGlb("models/veg/flower_heliophila.glb"),
+    ]);
+  const [clumpMat, tuftMat, sorrelMat, fernMat, flowerMat] = await Promise.all([
+    scanMaterial("grass_medium_02", 0.45),
+    scanMaterial("grass_bermuda_01", 0.2),
+    scanMaterial("shrub_sorrel_01", 0.3),
+    scanMaterial("fern_02", 0.6, 0.6),
+    scanMaterial("flower_heliophila", 0.5),
   ]);
+  const meadowTint = () =>
+    col.setHSL(0.22 + rand() * 0.05, 0.12 + rand() * 0.18, 0.78 + rand() * 0.22);
+  const green = (s: Spot) => s.pond > 1.15 && !(s.d > TRAIL_LENGTH - 3.5 && s.dist < 4.2);
+
+  // Scanned grass: full clumps along the verges, low tufts out into the meadow.
+  scanned(
+    group,
+    clumps,
+    clumpMat,
+    scatter(
+      ground,
+      Math.round(2600 * k),
+      104,
+      (s) =>
+        s.dist > 1.0 &&
+        s.dist < 9 &&
+        onTrail(s) &&
+        green(s) &&
+        rand() < Math.exp(-(s.dist - 1) / 4) + 0.15,
+    ),
+    (s) => 0.9 + Math.min(0.5, s.dist * 0.05),
+    meadowTint,
+    thinGrass,
+  );
+  scanned(
+    group,
+    tufts2,
+    tuftMat,
+    scatter(
+      ground,
+      Math.round(9000 * k),
+      104,
+      (s) => s.dist > 4 && s.dist < 36 && onTrail(s) && green(s),
+    ),
+    () => 1.2,
+    meadowTint,
+    thinGrass,
+  );
+  scanned(
+    group,
+    sorrel,
+    sorrelMat,
+    scatter(
+      ground,
+      Math.round(500 * k),
+      104,
+      (s) => s.dist > 1.4 && s.dist < 22 && onTrail(s) && green(s) && wild(s),
+    ),
+    () => 0.9,
+    () => col.setHSL(0.2 + rand() * 0.06, 0.2, 0.85 + rand() * 0.15),
+    null,
+  );
+  scanned(
+    group,
+    ferns,
+    fernMat,
+    scatter(
+      ground,
+      Math.round(260 * k),
+      110,
+      (s) => s.dist > 6 && s.dist < 40 && onTrail(s) && green(s) && wild(s),
+    ),
+    () => 0.85,
+    () => col.setHSL(0.26, 0.2, 0.8 + rand() * 0.2),
+    null,
+  );
+  scanned(
+    group,
+    heliophila,
+    flowerMat,
+    scatter(
+      ground,
+      Math.round(160 * k),
+      104,
+      (s) => s.dist > 1.3 && s.dist < 9 && onTrail(s) && green(s),
+    ),
+    () => 1,
+    () => col.setRGB(1, 1, 1),
+    null,
+  );
 
   // Grass: dense along the trail, thinning with distance.
   const grassMat = swaying(
@@ -202,8 +346,11 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
     }),
     0.34,
   );
-  const tufts = scatter(ground, Math.round(15000 * k), 34, (s) => {
-    if (s.dist < 1.05 || !onTrail(s) || s.pond < 1.15) return false;
+  // Cards: distant cover beyond the scanned grass.
+  const tufts = scatter(ground, Math.round(22000 * k), 104, (s) => {
+    if (s.dist < 7 || !onTrail(s) || s.pond < 1.15) return false;
+    // Not through the lookout's deck.
+    if (s.d > TRAIL_LENGTH - 3.5 && s.dist < 4.2) return false;
     return rand() < Math.exp(-(s.dist - 1) / 9) + 0.12;
   });
   const grass = instanced(cardClump(0.55, 0.38, 3), grassMat, tufts.length, false);
@@ -248,9 +395,9 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
   const shrubGeo = leafDome(0.55, mobile ? 14 : 22);
   const shrubs = scatter(
     ground,
-    Math.round(90 * k),
-    40,
-    (s) => s.dist > 2.5 && onTrail(s) && offLedgeDrop(s) && s.pond > 1.5,
+    Math.round(200 * k),
+    110,
+    (s) => s.dist > 2.5 && s.dist < 40 && onTrail(s) && offLedgeDrop(s) && s.pond > 1.5 && wild(s),
   );
   const shrub = instanced(shrubGeo, shrubMat, shrubs.length, true);
   shrubs.forEach((t, i) => {
@@ -263,8 +410,8 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
   const flowerVariants = dandelions.filter((v) => (v.geometry.index?.count ?? 0) / 3 < 5000);
   const spots = scatter(
     ground,
-    Math.round(260 * k),
-    26,
+    Math.round(520 * k),
+    104,
     (s) => s.dist > 1.2 && s.dist < 14 && onTrail(s) && s.pond > 1.25,
   );
   flowerVariants.forEach((v, j) => {
@@ -279,9 +426,9 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
   // Scanned mossy rocks: boulders in the meadow, pebbles on the path verges.
   const rockSpots = scatter(
     ground,
-    Math.round(70 * k),
-    40,
-    (s) => s.dist > 1.6 && onTrail(s) && s.pond > 1.3,
+    Math.round(150 * k),
+    110,
+    (s) => s.dist > 1.6 && s.dist < 45 && onTrail(s) && s.pond > 1.3 && wild(s),
   );
   const pebbles: Spot[] = [];
   for (const pt of path) {
@@ -315,23 +462,14 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
     buildTreeVariant(8.5, 18, 12),
     buildTreeVariant(5, 13, 10),
   ];
-  const near = scatter(
+  // Firs across the plateau, kept off the green, the orchard and the lane, thicker away from
+  // the path; the vista's forests carry on beyond.
+  const all = scatter(
     ground,
-    Math.round(120 * k),
-    52,
-    (s) => s.dist > 7 && s.d < TRAIL_LENGTH + 8,
+    Math.round(420 * k),
+    122,
+    (s) => s.dist > 7 && wild(s) && rand() < 0.35 + Math.min(0.65, (s.dist - 7) / 30),
   );
-  const far: Spot[] = [];
-  const ring = mobile ? 90 : 200;
-  for (let i = 0; i < ring; i++) {
-    const a = (i / ring) * Math.PI * 2 + rand() * 0.03;
-    const r = 60 + rand() * 18;
-    const x = -18 + Math.cos(a) * r;
-    const z = 24 + Math.sin(a) * r;
-    const g = ground.query(x, z);
-    if (g.dist > 12) far.push({ x, y: g.height, z, dist: g.dist, d: g.near.d, pond: g.pond });
-  }
-  const all = [...near, ...far];
   variants.forEach((v, j) => {
     const mine = all.filter((_, i) => i % variants.length === j);
     const trunk = instanced(v.trunk, mats.trunk, mine.length, true);

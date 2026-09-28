@@ -18,3 +18,8 @@ playwright-report/
 assets-src/audio/
 assets-src/polyhaven/
 assets-src/quaternius/
+
+# Landscape bake: local venv, kernel cache and intermediate grids
+tools/bake/.venv/
+tools/bake/.cache/
+bake/work/

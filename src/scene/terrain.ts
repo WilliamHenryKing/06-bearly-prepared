@@ -1,10 +1,12 @@
 import * as THREE from "three";
-import { LEDGE, type PathPoint, TRAIL_LENGTH } from "../game/trail";
+import { camberAt, LEDGE, type PathPoint, TRAIL_LENGTH } from "../game/trail";
+import { landHeight } from "./land";
 import type { Pond } from "./pond";
 import { applySet, type PbrSet } from "./textures";
 
-// Ground shaped around the authored trail: the path is carved flat, hills roll away from it,
-// and along the ledge one side drops into the valley while the other rises into a rock wall.
+// Ground shaped around the authored trail: the path is carved into the land (level across, or
+// tilted where the trail crosses a hillside), hills roll away from it into the wider land
+// (land.ts), and along the ledge one side drops away while the other rises into a rock wall.
 
 const smooth = (a: number, b: number, x: number) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -57,20 +59,31 @@ export class Ground {
     const rz = -Math.sin(near.heading);
     const side = (x - near.x) * rx + (z - near.z) * rz;
     const flat = 1 - smooth(1.1, 7, best);
-    const hills = base + noise(x, z) * 0.8 + Math.max(0, best - 7) * 0.22;
-    let h = near.y * flat + hills * (1 - flat) - 0.04;
+    // Where the trail crosses a hillside, its bed tilts with the slope and the hill carries on
+    // above and below it.
+    const tilt = Math.tan(camberAt(near.d));
+    const bed = near.y - side * tilt;
+    const hillside = -side * tilt * 1.25 * (1 - smooth(14, 26, best));
+    const local = base + noise(x, z) * 0.8 + Math.max(0, best - 7) * 0.12 + hillside;
+    const far = smooth(14, 60, best);
+    const hills = local * (1 - far) + landHeight(x, z) * far;
+    let h = bed * flat + hills * (1 - flat) - 0.04;
+    // The ledge: ramps in and out over several metres, and its lip wanders, so the drop reads as
+    // a natural cliff rather than a cut.
     const ledge =
-      smooth(LEDGE.from - 3, LEDGE.from + 2, near.d) *
-      (1 - smooth(LEDGE.to - 2, LEDGE.to + 3, near.d));
+      smooth(LEDGE.from - 8, LEDGE.from + 3, near.d) *
+      (1 - smooth(LEDGE.to - 3, LEDGE.to + 8, near.d));
     if (ledge > 0) {
-      const drop = -7 * smooth(1.1, 4.5, -side) - Math.max(0, -side - 4.5) * 0.4;
+      const lip = 1.1 + noise(x * 0.9, z * 0.9) * 0.35;
+      const depth = 7 + noise(x * 0.4 + 3, z * 0.4) * 2.5;
+      const drop = -depth * smooth(lip, lip + 3.4, -side) - Math.max(0, -side - 4.5) * 0.5;
       const wall = 2.6 * smooth(1.2, 4, side) + noise(x * 2, z * 2) * 0.4 * smooth(1.5, 4, side);
       const shaped = near.y - 0.04 + (side < 0 ? drop : wall);
       h = h * (1 - ledge) + shaped * ledge;
     }
-    // Past the lookout deck the ground falls away and the valley opens up.
+    // Past the lookout deck the ground falls away down the scarp to the valley.
     const view = smooth(TRAIL_LENGTH + 2, TRAIL_LENGTH + 7, near.d);
-    if (view > 0) h = h * (1 - view) + (near.y - 9 - Math.max(0, best - 3) * 0.35) * view;
+    if (view > 0) h = h * (1 - view) + Math.min(near.y - 6 - Math.max(0, best - 3) * 0.6, landHeight(x, z)) * view;
     const pond = this.pond ? this.pond.e(x, z) : Number.POSITIVE_INFINITY;
     if (this.pond && pond < 2) h = this.pond.carve(x, z, h);
     return { dist: best, side, near, height: h, pond };
@@ -93,6 +106,8 @@ export function buildTerrain(
   geo.rotateX(-Math.PI / 2);
   const pos = geo.getAttribute("position") as THREE.BufferAttribute;
   const colors = new Float32Array(pos.count * 3);
+  const dirt = new Float32Array(pos.count);
+  const ledge = new Float32Array(pos.count);
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + center.x;
     const z = pos.getZ(i) + center.y;
@@ -100,14 +115,19 @@ export function buildTerrain(
     // Under the pond's fine patch the coarse meadow drops out of sight.
     const hidden = ground.pond?.covers(x, z) ? 0.3 : 0;
     pos.setXYZ(i, x, q.height - hidden, z);
-    const steep = Math.min(1, Math.abs(q.height - q.near.y) / 2.5);
-    const onLedge = q.near.d > LEDGE.from - 3 && q.near.d < LEDGE.to + 3 ? 1 : 0;
-    const rock = Math.max(onLedge * steep, smooth(4, 12, q.height - q.near.y - q.dist * 0.18));
-    const dirt = 1 - smooth(0.7, 2.1, q.dist);
-    colors.set([1 - rock * 0.25, dirt, rock], i * 3);
+    dirt[i] = 1 - smooth(0.7, 2.1, q.dist);
+    ledge[i] = q.near.d > LEDGE.from - 3 && q.near.d < LEDGE.to + 3 && q.dist < 12 ? 1 : 0;
+  }
+  geo.computeVertexNormals();
+  // Rock wherever the ground is steep (scarps, ridges, the ledge's wall and drop); a little
+  // darker in the folds.
+  const nrm = geo.getAttribute("normal") as THREE.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) {
+    const steep = 1 - nrm.getY(i);
+    const rock = Math.max(smooth(0.18, 0.4, steep), (ledge[i] as number) * smooth(0.08, 0.2, steep));
+    colors.set([1 - rock * 0.25, dirt[i] as number, rock], i * 3);
   }
   geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  geo.computeVertexNormals();
   const mesh = new THREE.Mesh(geo, material);
   mesh.receiveShadow = true;
   return mesh;
@@ -134,7 +154,7 @@ export function buildTrail(
     for (const a of across) {
       const x = p.x + rx * w * a;
       const z = p.z + rz * w * a;
-      let y = p.y + 0.025 + (1 - Math.abs(a)) * 0.012;
+      let y = p.y + 0.025 + (1 - Math.abs(a)) * 0.012 - w * a * Math.tan(camberAt(p.d));
       // Through the pond the path runs down the bed and out again.
       if (ground?.pond && ground.pond.e(x, z) < 1.2) y = Math.min(y, ground.height(x, z) + 0.018);
       verts.push(x, y, z);

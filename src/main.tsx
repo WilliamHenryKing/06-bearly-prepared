@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { SoundCues } from "./audio/cues";
 import { sound } from "./audio/sound";
-import type { ItemId } from "./game/items";
+import { ITEMS, type ItemId } from "./game/items";
 import {
   createRun,
   drainEvents,
@@ -50,6 +50,19 @@ window.addEventListener("keydown", (e) => {
   unlock();
   if (e.code === "KeyM" && !e.repeat && !e.metaKey && !e.ctrlKey) sound.toggleMuted();
 });
+
+/** Villagers the bear walks into, never looking up. */
+const BUMPS = [
+  "Sorry! (They didn't look up.)",
+  "Bumped a scroller. Wait for a gap!",
+  '"Watch it, I\'m on a call."',
+  "They're filming a story. You're in it now.",
+  "Nobody here looks where they walk.",
+];
+const pick = <T,>(list: readonly T[]) => list[Math.floor(Math.random() * list.length)] as T;
+const ITEM_NAMES: Partial<Record<ItemId, string>> = Object.fromEntries(
+  Object.entries(ITEMS).map(([id, def]) => [id, def.name.toLowerCase()]),
+);
 
 const LINES: Partial<Record<ItemId, string>> = {
   biscuits: "The biscuits tumble into the grass.",
@@ -114,11 +127,15 @@ const actions: Actions = {
 };
 
 const visualApi = visualTestEnabled()
-  ? installVisualTest(scene, (r) => {
-      run = r;
-      outcome = null;
-      hudDirty = true;
-    })
+  ? installVisualTest(
+      scene,
+      (r) => {
+        run = r;
+        outcome = null;
+        hudDirty = true;
+      },
+      () => run,
+    )
   : null;
 
 bindKeyboard(() => run.phase === "hiking" && !hintOpen);
@@ -178,7 +195,16 @@ function tick(now: number) {
     for (const e of events) {
       if (e.type === "drop") showToast(LINES[e.id] ?? "Something fell off.");
       else if (e.type === "topple") showToast("Oof. Back to the last flag (+4 s).");
-      else if (e.type === "checkpoint" && e.at > 0)
+      else if (e.type === "trip") showToast("Tripped on a log! Jump them next time (Space).");
+      else if (e.type === "bump") showToast(pick(BUMPS));
+      else if (e.type === "branch" && e.hit)
+        showToast(`Bonk! The ${ITEM_NAMES[e.hit] ?? "load"} hit a branch.`);
+      else if (e.type === "goose") {
+        if (e.kind === "honk") showToast("HONK. The goose is awake. Keep walking!");
+        else if (e.kind === "peck") showToast("Ow! Pecked. Faster!");
+        else if (e.kind === "steal") showToast("The goose stole the biscuits!");
+        else if (e.kind === "quit") showToast("The goose gives up at the gate. Phew.");
+      } else if (e.type === "checkpoint" && e.at > 0)
         showToast("Flag reached: your load is saved here.");
       else if (e.type === "arrive") {
         outcome = teaOutcome(run.packed, run.stack);

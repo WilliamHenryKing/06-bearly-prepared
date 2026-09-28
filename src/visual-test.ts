@@ -5,7 +5,8 @@ import type { GameScene } from "./scene/game-scene";
 
 // Capture hook for visual evidence (docs/visual). Only installed in dev builds or with ?e2e in
 // the URL. window.__VISUAL_TEST__ exposes: ready, bookmarks, renderer, setBookmark(name),
-// clearBookmark(), freeze(on), settle(frames).
+// clearBookmark(), freeze(on), settle(frames), run() (a read-only look at the hike, so browser
+// tests can time their jumps like a player).
 
 export const visual = { frozen: false, frames: 0, step: 0 };
 const waiters: { n: number; done: () => void }[] = [];
@@ -27,9 +28,22 @@ export interface VisualApi {
   settle(frames?: number): Promise<void>;
   /** While frozen, advance the next frame by dt seconds (films step time deterministically). */
   step(dt: number): Promise<void>;
+  /** The hike so far: where the bear is and how it is going. */
+  run(): {
+    phase: string;
+    d: number;
+    speed: number;
+    airborne: boolean;
+    trips: number;
+    bumps: number;
+  };
 }
 
-export function installVisualTest(scene: GameScene, setRun: (r: RunState) => void): VisualApi {
+export function installVisualTest(
+  scene: GameScene,
+  setRun: (r: RunState) => void,
+  getRun: () => RunState,
+): VisualApi {
   const gl = scene.stage.renderer.getContext();
   const info = gl.getExtension("WEBGL_debug_renderer_info");
   const api: VisualApi = {
@@ -79,6 +93,17 @@ export function installVisualTest(scene: GameScene, setRun: (r: RunState) => voi
     step(dt) {
       visual.step = dt;
       return new Promise((done) => waiters.push({ n: visual.frames + 1, done }));
+    },
+    run() {
+      const r = getRun();
+      return {
+        phase: r.phase,
+        d: r.d,
+        speed: r.speed,
+        airborne: r.airborne,
+        trips: r.trips,
+        bumps: r.bumps,
+      };
     },
   };
   (window as unknown as { __VISUAL_TEST__: VisualApi }).__VISUAL_TEST__ = api;

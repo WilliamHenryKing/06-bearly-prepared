@@ -201,6 +201,141 @@ class Sound {
     lfo.stop(t + 2);
   }
 
+  /** A synthesised voice: an oscillator through a filter, with an envelope, panned. */
+  private voice(
+    t: number,
+    type: OscillatorType,
+    f0: number,
+    f1: number,
+    dur: number,
+    peak: number,
+    filter: { type: BiquadFilterType; f: number; q: number } | null,
+    pan = 0,
+  ) {
+    const ctx = this.ctx;
+    if (!ctx || !this.buses) return;
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.setValueAtTime(f0, t);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + Math.min(0.02, dur * 0.2));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const p = ctx.createStereoPanner();
+    p.pan.value = Math.max(-1, Math.min(1, pan));
+    let node: AudioNode = osc;
+    if (filter) {
+      const bq = ctx.createBiquadFilter();
+      bq.type = filter.type;
+      bq.frequency.value = filter.f;
+      bq.Q.value = filter.q;
+      node = node.connect(bq);
+    }
+    node.connect(g).connect(p).connect(this.buses.sfx);
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+  }
+
+  /** Filtered noise: rustling leaves, a whoosh of air. */
+  private noise(t: number, dur: number, peak: number, f0: number, f1: number, q: number, pan = 0) {
+    const ctx = this.ctx;
+    if (!ctx || !this.buses) return;
+    const len = Math.ceil(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++)
+      data[i] = (Math.random() * 2 - 1) * (0.6 + 0.4 * Math.sin(i * 0.013) ** 2);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const bq = ctx.createBiquadFilter();
+    bq.type = "bandpass";
+    bq.Q.value = q;
+    bq.frequency.setValueAtTime(f0, t);
+    bq.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + dur * 0.25);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const p = ctx.createStereoPanner();
+    p.pan.value = Math.max(-1, Math.min(1, pan));
+    src.connect(bq).connect(g).connect(p).connect(this.buses.sfx);
+    src.start(t);
+  }
+
+  private ready() {
+    return this.ctx && this.buses && !this.muted && this.ctx.state === "running";
+  }
+
+  /** The goose: two nasal blasts, the second lower ("HONK-onk"). */
+  honk(delay = 0, pan = 0, gain = 1) {
+    if (!this.ready()) return;
+    const t = (this.ctx as AudioContext).currentTime + delay;
+    const f = 380 + Math.random() * 60;
+    this.voice(
+      t,
+      "sawtooth",
+      f,
+      f * 0.86,
+      0.19,
+      0.11 * gain,
+      { type: "bandpass", f: 1150, q: 3.5 },
+      pan,
+    );
+    this.voice(
+      t,
+      "square",
+      f * 0.5,
+      f * 0.45,
+      0.19,
+      0.035 * gain,
+      { type: "lowpass", f: 900, q: 1 },
+      pan,
+    );
+    this.voice(
+      t + 0.24,
+      "sawtooth",
+      f * 0.9,
+      f * 0.74,
+      0.16,
+      0.09 * gain,
+      { type: "bandpass", f: 1000, q: 3.5 },
+      pan,
+    );
+  }
+
+  /** A phone notification: two bright blips. */
+  ping(delay = 0, pan = 0, gain = 1) {
+    if (!this.ready()) return;
+    const t = (this.ctx as AudioContext).currentTime + delay;
+    const base = [1568, 1760, 2093][Math.floor(Math.random() * 3)] as number;
+    this.voice(t, "sine", base, base, 0.09, 0.05 * gain, null, pan);
+    this.voice(t + 0.1, "sine", base * 1.335, base * 1.335, 0.12, 0.045 * gain, null, pan);
+  }
+
+  /** Leaves shaken. */
+  rustle(delay = 0, pan = 0, gain = 1) {
+    if (!this.ready()) return;
+    const t = (this.ctx as AudioContext).currentTime + delay;
+    this.noise(t, 0.45, 0.16 * gain, 5200, 2600, 1.4, pan);
+    this.noise(t + 0.12, 0.3, 0.1 * gain, 3800, 2200, 1.2, pan);
+  }
+
+  /** A soft, heavy thud (a landing; an apple on a head). */
+  thud(delay = 0, gain = 1, pitch = 1) {
+    if (!this.ready()) return;
+    const t = (this.ctx as AudioContext).currentTime + delay;
+    this.voice(t, "sine", 120 * pitch, 55 * pitch, 0.18, 0.28 * gain, null);
+    this.noise(t, 0.08, 0.08 * gain, 900, 300, 0.8);
+  }
+
+  /** Air rushing past (a jump). */
+  whoosh(delay = 0, gain = 1) {
+    if (!this.ready()) return;
+    const t = (this.ctx as AudioContext).currentTime + delay;
+    this.noise(t, 0.35, 0.07 * gain, 700, 1900, 0.9);
+  }
+
   setMuted(m: boolean) {
     this.muted = m;
     try {

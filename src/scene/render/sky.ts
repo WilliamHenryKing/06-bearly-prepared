@@ -49,6 +49,14 @@ const fragmentShader = /* glsl */ `
   uniform vec3 skyAmbient;
   uniform vec3 groundColour;
   uniform float detail;
+  // The baked sky (tools/bake/render_sky.py): path-traced cumulus in the same atmosphere,
+  // equirectangular from panoElTop to panoElBottom, pre-exposed radiance ÷ panoScale.
+  uniform sampler2D panorama;
+  uniform float panoOn;
+  uniform float panoScale;
+  uniform float panoElTop;
+  uniform float panoElBottom;
+  uniform float sunVisible;
 
   ${ATMOSPHERE_GLSL}
 
@@ -86,6 +94,19 @@ const fragmentShader = /* glsl */ `
   void main() {
     vec3 direction = normalize(vDirection);
     float above = direction.y;
+    if (panoOn > 0.5) {
+      float phi = atan(direction.z, direction.x);
+      float el = asin(clamp(direction.y, -1.0, 1.0));
+      vec2 uv = vec2(fract(phi / 6.2831853), 1.0 - (panoElTop - max(el, panoElBottom)) / (panoElTop - panoElBottom));
+      vec3 seen = texture2D(panorama, uv).rgb * panoScale;
+      if (sunDisc > 0.5) {
+        float disc = smoothstep(0.999989, 0.9999895, dot(direction, sunDirection));
+        vec3 discRadiance = ${SOLAR_ILLUMINANCE.toFixed(1)} / 6.8e-5 * atmosphereTransmittance(sunDirection);
+        seen += min(discRadiance, vec3(4e8)) * disc * sunVisible * preExposure;
+      }
+      gl_FragColor = vec4(min(seen, vec3(30000.0)), 1.0);
+      return;
+    }
     vec3 radiance = atmosphereScatter(direction, sunDirection, ${SOLAR_ILLUMINANCE.toFixed(1)}, 1e9);
     if (moonLux > 1e-5) radiance += atmosphereScatter(direction, moonDirection, moonLux, 1e9);
     // Airglow and distant light pollution: the faint floor of a dark coastal sky.
@@ -199,6 +220,12 @@ export class SkyDome {
         skyAmbient: { value: new Color(0, 0, 0) },
         groundColour: { value: new Color(0, 0, 0) },
         detail: { value: 1 },
+        panorama: { value: null },
+        panoOn: { value: 0 },
+        panoScale: { value: 1 },
+        panoElTop: { value: Math.PI / 2 },
+        panoElBottom: { value: -0.2 },
+        sunVisible: { value: 1 },
       },
       vertexShader,
       fragmentShader,
@@ -224,11 +251,28 @@ export class SkyDome {
     // Physical cd/m²: the shader applies pre-exposure once, at output.
     (u.groundColour as { value: Color }).value.setRGB(...ambient.groundRadiance);
   }
+  /** Show a baked sky panorama instead of the live atmosphere and 2D clouds. */
+  setPanorama(texture: Texture, pano: Panorama) {
+    const u = this.material.uniforms as Record<string, { value: unknown }>;
+    (u.panorama as { value: unknown }).value = texture;
+    set(u.panoOn, 1);
+    set(u.panoScale, pano.scale);
+    set(u.panoElTop, (pano.elTopDeg * Math.PI) / 180);
+    set(u.panoElBottom, (pano.elBottomDeg * Math.PI) / 180);
+    set(u.sunVisible, pano.sunTransmittance);
+  }
   dispose() {
     this.mesh.geometry.dispose();
     this.material.dispose();
   }
 }
+
+export type Panorama = {
+  scale: number;
+  elTopDeg: number;
+  elBottomDeg: number;
+  sunTransmittance: number;
+};
 function set(uniform: { value: unknown } | undefined, value: number) {
   if (uniform) uniform.value = value;
 }
@@ -274,6 +318,9 @@ export class EnvironmentBaker {
     this.pmrem = new PMREMGenerator(renderer);
     this.bakeDome = new SkyDome();
     this.scene.add(this.bakeDome.mesh);
+  }
+  setPanorama(texture: Texture, pano: Panorama) {
+    this.bakeDome.setPanorama(texture, pano);
   }
   bake(sky: Celestial, time: number, ambient: SkyAmbient): Texture {
     this.bakeDome.apply(sky, time, ambient);

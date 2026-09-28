@@ -63,7 +63,7 @@ export const BOOKMARKS: Record<string, Bookmark> = {
     viewport: DESK,
   },
   ledge: {
-    d: 84,
+    d: 188,
     load: TALL,
     tilt: -0.1,
     eye: [-4.5, -3.2, 2.6],
@@ -131,6 +131,56 @@ export const BOOKMARKS: Record<string, Bookmark> = {
     fov: 42,
     viewport: DESK,
     wet: [0.3, 0.85, 0.25, 0.35],
+  },
+  /** The village green: the crowd glued to their phones, the bear waiting for a gap. */
+  green: {
+    d: 84,
+    load: TALL,
+    tilt: 0.04,
+    eye: [-3.6, 2.2, 2.6],
+    look: [4, 0.4, 0.8],
+    fov: 50,
+    viewport: DESK,
+  },
+  /** The orchard's low branches, one side then the other. */
+  orchard: {
+    d: 111,
+    load: TALL,
+    tilt: -0.12,
+    eye: [-3.2, -1.6, 1.7],
+    look: [3.5, 0.6, 1.2],
+    fov: 46,
+    viewport: DESK,
+  },
+  /** Goose Lane. */
+  lane: {
+    d: 146,
+    load: TALL,
+    tilt: 0.05,
+    eye: [-3.4, 1.8, 1.6],
+    look: [2.5, -0.2, 0.5],
+    fov: 46,
+    viewport: DESK,
+  },
+  /** The lookout: over the bear's shoulder, down the scarp to the lake and the ranges. */
+  lookout: {
+    d: 214,
+    load: ["kettle", "blanket", "teacups"],
+    tilt: 0,
+    eye: [-2.6, 0.5, 1.9],
+    look: [30, -1.5, -2],
+    fov: 55,
+    viewport: DESK,
+  },
+  /** A wide establishing view from above the plateau toward the valley and the ranges. */
+  vista: {
+    d: 170,
+    load: TALL,
+    tilt: 0,
+    eye: [-25, 10, 22],
+    look: [80, -20, -6],
+    fov: 50,
+    viewport: DESK,
   },
   "hero-portrait": {
     d: 21,

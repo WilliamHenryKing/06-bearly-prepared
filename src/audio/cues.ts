@@ -1,7 +1,7 @@
 import type { ItemId } from "../game/items";
 import type { RunEvent, RunState } from "../game/run";
 import type { TeaOutcome } from "../game/tea";
-import { gustAt, LEDGE, TRAIL_LENGTH } from "../game/trail";
+import { GREEN, gustAt, LEDGE, TRAIL_LENGTH } from "../game/trail";
 import { POND } from "../scene/pond";
 import { sound } from "./sound";
 
@@ -13,6 +13,8 @@ export class SoundCues {
   private creakCool = 0;
   private teaClock = -1;
   private silence = false;
+  /** Seconds to the next phone ping on the green. */
+  private pingIn = 1;
 
   reset() {
     this.teaClock = -1;
@@ -33,6 +35,29 @@ export class SoundCues {
         sound.play("cloth", { gain: 0.7 });
         sound.play(e.id, { gain: 0.5, delay: 0.35 });
       } else if (e.type === "checkpoint" && e.at > 0) sound.play("flag", { gain: 0.6 });
+      else if (e.type === "jump") sound.whoosh(0, 0.8);
+      else if (e.type === "land") {
+        sound.thud(0, 0.4 + 0.6 * e.strength, 1.1);
+        sound.play("step-grass", { gain: 0.35 + 0.3 * e.strength, rate: 0.85 });
+        if (e.lurch !== 0) sound.play("creak", { gain: 0.35, pan: e.lurch * 0.5, delay: 0.05 });
+      } else if (e.type === "trip") {
+        sound.play("log", { gain: 0.8 });
+        sound.thud(0.18, 1, 0.8);
+        sound.play("topple", { gain: 0.9, delay: 0.15 });
+        sound.play("cloth", { gain: 0.6, delay: 0.5 });
+      } else if (e.type === "bump") {
+        sound.play("cloth", { gain: 0.5, pan: e.side * 0.5 });
+        sound.thud(0, 0.35, 1.4);
+        sound.ping(0.15, e.side * 0.6, 1.2);
+      } else if (e.type === "branch") {
+        sound.rustle(0, e.side * 0.6, e.hit ? 1.2 : 0.5);
+        if (e.hit) sound.thud(0.25, 0.5, 2.2);
+      } else if (e.type === "goose") {
+        if (e.kind === "peck") {
+          sound.honk(0, e.side ? e.side * 0.4 : 0, 0.7);
+          sound.thud(0.05, 0.35, 1.8);
+        } else sound.honk(0, 0, e.kind === "quit" ? 0.8 : 1.1);
+      }
     }
   }
 
@@ -85,6 +110,15 @@ export class SoundCues {
     if (s.phase === "packing") {
       sound.setBeds({ music: 0.3, birds: 0.35, wind: 0.06, water: 0 });
       return;
+    }
+
+    // The village green chirps with other people's notifications.
+    if (s.d > GREEN.from - 8 && s.d < GREEN.to + 4) {
+      this.pingIn -= dt;
+      if (this.pingIn <= 0) {
+        sound.ping(0, Math.random() * 1.6 - 0.8, 0.45 + Math.random() * 0.4);
+        this.pingIn = 1.2 + Math.random() * 3;
+      }
     }
 
     // The load creaks as soon as something begins to slide.

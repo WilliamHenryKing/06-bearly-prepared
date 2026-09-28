@@ -2,9 +2,9 @@ import { useState } from "react";
 import { setTouch } from "./input";
 
 // Big hold-to-act buttons for mouse and touch. They mirror the keyboard (A/← lean left,
-// W/↑/Space walk, D/→ lean right) and stay pressed while the pointer is held.
+// W/↑ walk, Space jump, D/→ lean right) and stay pressed while the pointer is held.
 
-type Key = "left" | "walk" | "right";
+type Key = "left" | "walk" | "right" | "jump";
 
 function HoldButton({
   k,
@@ -59,14 +59,14 @@ export function Controls() {
       <HoldButton
         k="left"
         label="Lean left (A or left arrow)"
-        className="h-20 w-24 bg-sky text-paper sm:w-28"
+        className="h-20 w-20 bg-sky text-paper sm:w-28"
       >
         <span className="text-2xl leading-none">◀</span>
         <span className="block text-xs">Lean</span>
       </HoldButton>
       <HoldButton
         k="walk"
-        label="Walk, hold to keep walking (W, up arrow or Space)"
+        label="Walk, hold to keep walking (W or up arrow)"
         className="h-20 flex-1 bg-berry text-paper sm:w-44 sm:flex-none"
       >
         <span className="text-lg">Walk</span>
@@ -75,10 +75,18 @@ export function Controls() {
       <HoldButton
         k="right"
         label="Lean right (D or right arrow)"
-        className="h-20 w-24 bg-sky text-paper sm:w-28"
+        className="h-20 w-20 bg-sky text-paper sm:w-28"
       >
         <span className="text-2xl leading-none">▶</span>
         <span className="block text-xs">Lean</span>
+      </HoldButton>
+      <HoldButton
+        k="jump"
+        label="Jump (Space)"
+        className="h-20 w-20 bg-mustard text-ink sm:w-24"
+      >
+        <span className="text-2xl leading-none">⤒</span>
+        <span className="block text-xs">Jump</span>
       </HoldButton>
     </div>
   );

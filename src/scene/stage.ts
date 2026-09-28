@@ -5,7 +5,14 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
-import { EnvironmentBaker, hazeRadiance, SkyDome, skyAmbient } from "./render/sky";
+import {
+  EnvironmentBaker,
+  hazeRadiance,
+  type Panorama,
+  type SkyAmbient,
+  SkyDome,
+  skyAmbient,
+} from "./render/sky";
 import { type Celestial, celestial } from "./render/sky-model";
 
 // One lighting model (after ODD TIDE's rig and pipeline, reused with permission): a physical sky
@@ -16,35 +23,74 @@ import { type Celestial, celestial } from "./render/sky-model";
 /** A warm mid-afternoon. */
 export const HOUR = 17.4;
 /** Meteorological visibility for the aerial perspective, metres (a hazy summer valley). */
-const VISIBILITY = 4000;
+const VISIBILITY = 26000;
+/** Scale height of the haze (metres): the air near the valley floor is the densest. */
+const FOG_SCALE = 900;
 const SHADOW_RADIUS = 9;
 
 export type Tier = "high" | "low";
 
 let fogPatched = false;
-function patchFog() {
+/**
+ * @param sunFlat the sun's bearing (unit, x/z)
+ * @param sunTint how much brighter and warmer the horizon haze is toward the sun than away
+ */
+function patchFog(sunFlat: [number, number], sunTint: [number, number, number]) {
   if (fogPatched) return;
   fogPatched = true;
-  // Exponential extinction over true view distance, not depth.
+  const v2 = (v: number[]) => v.map((x) => x.toFixed(4)).join(", ");
+  // Aerial perspective: exponential extinction over the true view distance, in air that thins
+  // with height (scale height FOG_SCALE m), using the average density along each view ray. The
+  // valley floor recedes into haze while the peaks above it stand out.
+  THREE.ShaderChunk.fog_pars_vertex = `
+#ifdef USE_FOG
+  varying float vFogDepth;
+  varying float vFogHeight;
+  varying vec3 vFogDir;
+#endif`;
   THREE.ShaderChunk.fog_vertex = `
 #ifdef USE_FOG
   vFogDepth = length( mvPosition.xyz );
+  vFogHeight = ( transpose( mat3( viewMatrix ) ) * ( mvPosition.xyz - viewMatrix[ 3 ].xyz ) ).y;
+  vFogDir = transpose( mat3( viewMatrix ) ) * mvPosition.xyz;
+#endif`;
+  THREE.ShaderChunk.fog_pars_fragment = `
+#ifdef USE_FOG
+  uniform vec3 fogColor;
+  varying float vFogDepth;
+  varying float vFogHeight;
+  varying vec3 vFogDir;
+  #ifdef FOG_EXP2
+    uniform float fogDensity;
+  #else
+    uniform float fogNear;
+    uniform float fogFar;
+  #endif
 #endif`;
   THREE.ShaderChunk.fog_fragment = `
 #ifdef USE_FOG
   #ifdef FOG_EXP2
-    float fogFactor = 1.0 - exp( - fogDensity * vFogDepth );
+    float fogH = ${FOG_SCALE.toFixed(1)};
+    float fogDh = vFogHeight - cameraPosition.y;
+    float fogAvg = abs( fogDh ) > 1.0
+      ? fogH * ( exp( -max( cameraPosition.y, 0.0 ) / fogH ) - exp( -max( vFogHeight, 0.0 ) / fogH ) ) / fogDh
+      : exp( -max( cameraPosition.y, 0.0 ) / fogH );
+    float fogFactor = 1.0 - exp( - fogDensity * vFogDepth * fogAvg );
   #else
     float fogFactor = smoothstep( fogNear, fogFar, vFogDepth );
   #endif
-  gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );
+  // Toward the sun the haze glows brighter and warmer (forward scattering off the aerosol).
+  vec2 fogFlat = normalize( vFogDir.xz + vec2( 1e-6 ) );
+  float fogSun = pow( max( dot( fogFlat, vec2( ${v2(sunFlat)} ) ), 0.0 ), 2.0 );
+  vec3 fogCol = fogColor * mix( vec3( 1.0 ), vec3( ${v2(sunTint)} ), fogSun );
+  gl_FragColor.rgb = mix( gl_FragColor.rgb, fogCol, fogFactor );
 #endif`;
 }
 
 export class Stage {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
-  readonly camera = new THREE.PerspectiveCamera(42, 1, 0.1, 900);
+  readonly camera = new THREE.PerspectiveCamera(42, 1, 0.12, 9000);
   readonly key = new THREE.DirectionalLight(0xffffff, 1);
   readonly sky = new SkyDome({ cloudCoverage: 0.34 });
   readonly sun: Celestial;
@@ -61,12 +107,26 @@ export class Stage {
   private keyLux: number;
   private shift = { x: 0, y: 0 };
   private pixelRatio: number;
-  private readonly sunDir = new THREE.Vector3();
+  /** Toward the sun (unit). */
+  readonly sunDir = new THREE.Vector3();
+  private baker: EnvironmentBaker;
+  private ambient: SkyAmbient;
   width = 1;
   height = 1;
 
   constructor(canvas: HTMLCanvasElement, mobile: boolean) {
-    patchFog();
+    {
+      const sky = celestial(HOUR);
+      const s = sky.sun.direction;
+      const l = Math.hypot(s[0], s[2]) || 1;
+      const flat: [number, number] = [s[0] / l, s[2] / l];
+      const toward = hazeRadiance(sky, flat);
+      const away = hazeRadiance(sky, [-flat[0], -flat[1]]);
+      const tint = [0, 1, 2].map((i) =>
+        Math.min(4, Math.max(1, (toward[i] ?? 1) / (away[i] ?? 1))),
+      ) as [number, number, number];
+      patchFog(flat, tint);
+    }
     this.tier = mobile ? "low" : "high";
     this.renderer = new THREE.WebGLRenderer({
       canvas,
@@ -90,8 +150,9 @@ export class Stage {
     this.sky.apply(sky, 0, ambient);
     this.scene.add(this.sky.mesh);
     this.aoHidden.push(this.sky.mesh);
-    const baker = new EnvironmentBaker(this.renderer);
-    this.scene.environment = baker.bake(sky, 0, ambient);
+    this.baker = new EnvironmentBaker(this.renderer);
+    this.ambient = ambient;
+    this.scene.environment = this.baker.bake(sky, 0, ambient);
 
     this.sunDir.set(...sky.sun.direction).normalize();
     this.keyLux = sky.sunLux * sky.preExposure;
@@ -113,8 +174,9 @@ export class Stage {
 
     const haze = hazeRadiance(sky, [-this.sunDir.x, -this.sunDir.z]);
     const p = sky.preExposure;
+    // Distance takes on the sky's blue (the haze is lit by the whole sky, not only the sun).
     this.scene.fog = new THREE.FogExp2(
-      new THREE.Color(haze[0] * p, haze[1] * p, haze[2] * p),
+      new THREE.Color(haze[0] * p * 0.74, haze[1] * p * 0.92, haze[2] * p * 1.32),
       3.912 / VISIBILITY,
     );
 
@@ -174,6 +236,13 @@ export class Stage {
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
     this.composer.addPass(new SMAAPass());
+  }
+
+  /** Swap the live sky for the baked, path-traced one, and light the scene from it. */
+  setSkyPanorama(visible: THREE.Texture, forLight: THREE.Texture, pano: Panorama) {
+    this.sky.setPanorama(visible, pano);
+    this.baker.setPanorama(forLight, pano);
+    this.scene.environment = this.baker.bake(this.sun, 0, this.ambient);
   }
 
   /** Dim the sun for a solemn moment (0 … 1). */

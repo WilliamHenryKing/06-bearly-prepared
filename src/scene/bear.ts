@@ -26,6 +26,10 @@ export interface BearPose {
   /** 0 upright … 1 flat on the ground. */
   flop: number;
   flopSide: number;
+  /** 0 … 1: the flop is a forward faceplant (tripping over a log) rather than a sideways topple. */
+  flopForward: number;
+  /** 0 … 1: in the air (a jump). */
+  air: number;
   /** 0 … 1 bowed head for a solemn moment. */
   bow: number;
   /** 0 … 1 dismay just after something falls; `reactSide` is where it fell. */
@@ -47,6 +51,8 @@ export const restPose = (): BearPose => ({
   sit: 0,
   flop: 0,
   flopSide: 1,
+  flopForward: 0,
+  air: 0,
   bow: 0,
   react: 0,
   reactSide: 1,
@@ -242,6 +248,8 @@ export class Bear {
   phase = 0;
   /** Called on every footfall: side (-1 left, 1 right) and how hard. */
   onFootfall: ((side: number, strength: number) => void) | null = null;
+  /** World height of the ground at a point, so the feet plant on slopes. */
+  ground: ((x: number, z: number) => number) | null = null;
 
   /** The body inflated to the fur's depth: casts the shadow and stands in for the fur in GTAO. */
   proxy: THREE.SkinnedMesh | null = null;
@@ -627,7 +635,11 @@ export class Bear {
       const upper = this.b(i === 0 ? "armL" : "armR");
       const fore = this.b(i === 0 ? "foreArmL" : "foreArmR");
       upper.rotation.set(
-        swing * (1 - reach) + reach * 0.5 + p.sit * 0.75,
+        swing * (1 - reach) * (1 - p.air) +
+          reach * 0.5 +
+          p.sit * 0.75 -
+          p.air * 1.1 -
+          p.flop * p.flopForward * 1.5,
         0,
         side *
           (0.14 +
@@ -638,7 +650,8 @@ export class Bear {
             reach * 2.2 +
             p.alarm * 0.12 +
             p.react * 1.8 +
-            p.flop * 0.7),
+            p.air * 0.7 +
+            p.flop * 0.7 * (1 - p.flopForward)),
       );
       fore.rotation.set(
         0.25 + 0.55 * run + Math.max(0, swing) * 0.35 + reach * 0.7 + p.sit * 0.6,
@@ -672,12 +685,22 @@ export class Bear {
       const rest = side * 0.012 * idle;
       // Sitting: the feet slide forward along the ground and the toes turn up.
       const heel = Math.max(0, -pitch) * 0.075;
+      // Where the ground really is under this foot (a hillside, a log's slope), relative to the
+      // bear's root; only while standing.
+      let ground = 0;
+      if (this.ground && p.air < 0.5 && p.flop < 0.05) {
+        const yaw = this.root.rotation.y;
+        const lx = side * 0.125;
+        const px = this.root.position.x + lx * Math.cos(yaw) + z * Math.sin(yaw);
+        const pz = this.root.position.z - lx * Math.sin(yaw) + z * Math.cos(yaw);
+        ground = clamp(this.ground(px, pz) - this.root.position.y, -0.12, 0.12);
+      }
       this.target.set(
         mix(side * 0.125, side * 0.14, p.sit),
-        mix(ANKLE + y + heel, ANKLE * 0.8, p.sit),
-        mix(z - 0.01 + rest, -0.36, p.sit),
+        mix(ANKLE + y + heel + ground * (1 - p.air), ANKLE * 0.8, p.sit) + p.air * 0.16,
+        mix(z - 0.01 + rest, -0.36, p.sit) - p.air * (i === 0 ? 0.08 : -0.06),
       );
-      const footPitch = mix(pitch, 0.9, p.sit);
+      const footPitch = mix(pitch, 0.9, p.sit) + p.air * 0.5;
       this.solveLeg(i, footPitch, pelvisPitch, p.flop, side);
     }
 
@@ -689,8 +712,9 @@ export class Bear {
     );
     this.load.rotation.set(0, -yaw * 0.4, -p.tilt);
 
-    // A topple rolls the whole bear onto its side.
-    this.root.rotation.z = -p.flopSide * p.flop * 1.35;
+    // A topple rolls the whole bear onto its side; a trip pitches it onto its face.
+    this.root.rotation.z = -p.flopSide * p.flop * 1.35 * (1 - p.flopForward);
+    this.root.rotation.x = -p.flop * p.flopForward * 1.3;
   }
 
   /** Two-bone IK: thigh and shin reach the ankle target (root space), the foot takes `pitch`. */
