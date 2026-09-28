@@ -43,6 +43,12 @@ const greenWood = paintedWood(0x4f7a58);
 const mustard = paintedWood(PALETTE.mustard);
 const shade = felt(0xf1dfb8, 0.4);
 const brassMat = brass();
+// The lamp's pole is thinner than a pixel at play distance, where anisotropy's tangent frame
+// (built from screen-space UV derivatives) breaks down and blooms into a glare. Plain satin
+// brass keeps its glint.
+const poleMat = brass();
+poleMat.roughness = 0.42;
+poleMat.anisotropy = 0;
 const biscuit = matte(0xdcae6a, 0.8);
 
 function kettle() {
@@ -132,7 +138,7 @@ function stool() {
 function lamp(lit = false) {
   const g = new THREE.Group();
   g.add(mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.04, 24), brassMat, 0, 0.02, 0));
-  g.add(mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.8, 10), brassMat, 0, 0.42, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.8, 16), poleMat, 0, 0.42, 0));
   const shadeMat = lit
     ? new THREE.MeshStandardMaterial({
         color: 0xf6e2b0,

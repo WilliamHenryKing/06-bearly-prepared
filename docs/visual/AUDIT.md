@@ -24,6 +24,45 @@ integration · **A** atmosphere and depth · **C** composition · **X** artefact
 | `ledge` | Over the drop at the windy ledge, rope fence and cliff |
 | `hero-portrait` | The hero shot at 390 × 844 @2x |
 
+## Bear v2, 28 September 2026 (captures/gpu-before → captures/bear-v2)
+
+Both sets were captured on the real GPU (`ANGLE (NVIDIA GeForce RTX 2060, D3D11)`) with
+`VISUAL_GPU=1 node scripts/visual-capture.ts <set>`. `gpu-before` was captured from the live
+site before the change; `bear-v2` from the production build after it. The scores are the
+implementer's own; no independent review has been done. New bookmarks: `pond` (wading),
+`pond-top`, `pond-approach`, `pond-exit` (film start) and `wet` (just out of the pond).
+
+| Bookmark | L | M | D | E | A | C | X | U | Mean | Before |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| hero | 3 | 4 | 4 | 3 | 3 | 3 | 3 | 4 | 3.4 | 2.9 |
+| closeup | 3 | 4 | 4 | 3 | 3 | 3 | 3 | 3 | 3.3 | 2.5 |
+| hero-portrait | 3 | 4 | 3 | 3 | 3 | 3 | 3 | 3 | 3.1 | 2.8 |
+| pond (new) | 3 | 3 | 3 | 3 | 3 | 4 | 3 | 4 | 3.3 | n/a |
+| wet (new) | 3 | 4 | 3 | 3 | 3 | 3 | 3 | 3 | 3.1 | n/a |
+
+The before column is re-scored on the GPU capture: the fidelity pass lifted the meadow, but the
+bear was still smooth primitives in felt.
+
+What changed: the bear is one continuous sculpted, skinned body in 26 fur shells, with eyes,
+lids, brows and a leather nose; the walk plants its feet with leg IK and follows through on
+springs; a pond on the trail soaks the fur, which darkens, clumps and lies flat, drips, is
+shaken off and dries.
+
+Most visible remaining flaws:
+- **hero:** the backpack is still a smooth primitive beside the fur; in full sun the fur tips
+  read a little pale; the lamp's brass pole flared in this capture (a satin pole finish has
+  since been applied).
+- **closeup:** the silhouette fuzz is sparse over bright sky; the mouth line is thin; the brows
+  are small at this distance.
+- **pond:** the waterline cuts the fur hard (no meniscus or foam ring); the bed reads as dark
+  gravel rather than silt; reeds are flat grass cards up close.
+- **wet:** wet glints are faint in frozen frames; the soak edge is slightly noisy; frozen
+  captures show no drips (they appear in motion, see the films).
+
+Motion evidence (continuous frames, not stills): deterministic game films of the pond
+crossing, the climb-out and shake, and the ledge, plus look-dev walk, run and heavy-load cycles
+and turntables, rendered by `tools/batch/bear-v2-final.sh` (log in `docs/visual/batch/bear-v2/`).
+
 ## Baseline (captures/baseline)
 
 | Bookmark | L | M | D | E | A | C | X | U | Mean |

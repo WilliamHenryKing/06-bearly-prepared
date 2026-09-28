@@ -1,0 +1,34 @@
+{
+  "viewport": [900, 900],
+  "base": { "cam": "full", "refs": "1", "load": "0.3" },
+  "shots": [
+    { "name": "front", "params": { "angle": "25" } },
+    { "name": "back", "params": { "angle": "160" } },
+    { "name": "face", "params": { "cam": "face", "angle": "15" } },
+    { "name": "face-alarm", "params": { "cam": "face", "angle": "15", "alarm": "1" } },
+    { "name": "wet-knees", "params": { "angle": "25", "wet": "0.4", "soak": "1" } },
+    { "name": "soaked", "params": { "angle": "25", "wet": "1.6", "soak": "1" } },
+    {
+      "name": "soaked-face",
+      "params": { "cam": "face", "angle": "15", "wet": "1.6", "soak": "1" }
+    },
+    { "name": "frizz", "params": { "angle": "25", "frizz": "1", "wet": "0.3", "soak": "0.5" } }
+  ],
+  "sheets": [
+    {
+      "name": "review",
+      "shots": [
+        "front",
+        "back",
+        "face",
+        "face-alarm",
+        "wet-knees",
+        "soaked",
+        "soaked-face",
+        "frizz"
+      ],
+      "cols": 4,
+      "width": 420
+    }
+  ]
+}

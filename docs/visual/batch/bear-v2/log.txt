@@ -1,0 +1,44 @@
+19:05:35 1/5 evidence: every bookmark on the GPU (production preview)
+renderer: ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 (0x00001F15) Direct3D11 vs_5_0 ps_5_0, D3D11)
+captured establishing
+captured hero
+captured closeup
+captured material
+captured ledge
+captured pond
+captured pond-top
+captured pond-approach
+captured pond-exit
+captured wet
+captured hero-portrait
+19:06:20 2/5 look-dev turntables: dry, knee-wet, soaked, frizz
+turntable dry done
+turntable wet done
+turntable soaked done
+turntable frizz done
+19:07:26 3/5 gameplay films: pond crossing, climbing out and shaking, ledge gusts
+216 frames, 0 page errors
+135 frames, 0 page errors
+168 frames, 0 page errors
+19:11:58 4/5 walk cycle films from the look-dev profile camera
+17:12:05 ready on ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 (0x00001F15) Direct3D11 vs_5_0 ps_5_0, D3D11) (three r186)
+17:12:05 shot dry
+17:12:05 shot wet-ankles
+17:12:06 shot wet-knees
+17:12:06 shot wet-belly
+17:12:06 shot soaked
+17:12:07 shot splashed
+17:12:07 shot frizz
+17:12:08 shot soaked-face
+17:12:08 shot dry-face
+17:12:08 shot alarm-face
+17:12:31 film walk-side (62 frames)
+17:12:49 film run-side (50 frames)
+17:13:13 film heavy-side (62 frames)
+17:13:42 film walk-back (90 frames)
+17:13:42 sheet wetness
+17:13:42 sheet faces
+17:13:43 done in 98 s, 0 console errors
+19:13:43 5/5 README media from the production preview
+frames 45 | gif disposal ok: true | docs/readme
+19:14:33 done

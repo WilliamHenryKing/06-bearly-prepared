@@ -589,9 +589,7 @@
           "sha256": "f3b76076d854633b9adc1f2d9d1f004b8f04af6572c069f46e8bdd2223d87a69"
         }
       ],
-      "processingSteps": [
-        "Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"
-      ]
+      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
     },
     {
       "id": "kenney-rpg-audio",
@@ -622,9 +620,7 @@
           "sha256": "17e5d1d69d3ec5733083ba3674b6cecb29b7bc51461fd7995fd83e8416823033"
         }
       ],
-      "processingSteps": [
-        "Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"
-      ]
+      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
     },
     {
       "id": "kenney-interface-sounds",
@@ -665,9 +661,7 @@
           "sha256": "c0d58bea96ecdb6e60666d26ab655cf4d3658aed296e388fcf89804a81aaeecc"
         }
       ],
-      "processingSteps": [
-        "Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"
-      ]
+      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
     },
     {
       "id": "kenney-music-jingles",
@@ -688,9 +682,7 @@
           "sha256": "62cf9d9e5e53970583181b7b73879f1e875f8d346e21462c985092d2edec1898"
         }
       ],
-      "processingSteps": [
-        "Re-encoded to stereo 96 kb/s MP3"
-      ]
+      "processingSteps": ["Re-encoded to stereo 96 kb/s MP3"]
     },
     {
       "id": "oga-childrens-game-music-picnic",
@@ -706,9 +698,7 @@
           "sha256": "a258e3e747359094ed1a702304b148ebbc58157ea067bdb39df76ef2fb4833f1"
         }
       ],
-      "processingSteps": [
-        "Re-encoded to stereo 80 kb/s MP3, looped"
-      ]
+      "processingSteps": ["Re-encoded to stereo 80 kb/s MP3, looped"]
     },
     {
       "id": "oga-park-ambiences",

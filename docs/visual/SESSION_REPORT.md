@@ -1,3 +1,40 @@
+# Session report: 28 September 2026, Claude (local, RTX 2060): bear v2
+
+**Goal (William):** better graphics for the bear itself: fur, fur that gets wet and looks wet,
+and a walk that looks lively and smooth instead of robotic.
+
+**Changes:**
+- `src/scene/bear-body.ts`, `bear-body.worker.ts`, `sdf.ts`, `bear-rig.ts`: the body as a
+  signed-distance sculpt meshed in a worker at load, skinned by the sculpt's part fields,
+  with per-vertex fur length, cream, dark and pad masks and a comb direction.
+- `src/scene/fur.ts`: shell fur on `MeshPhysicalMaterial`; strands, clumps, lie and gravity,
+  wind, Kajiya-Kay glints, self-occlusion, distance filtering, and the wet look.
+- `src/scene/bear.ts`: the new rig, face and walk (two-bone leg IK, weight shift, springs),
+  and a shake-off.
+- `src/scene/pond.ts`, `wetness.ts`, and changes in `terrain.ts`, `vegetation.ts` and
+  `game-scene.ts`: the pond (scenery only), droplets, and the wetness state.
+- Sound: `splash-*`, `amb-water`, `shake-0` (CC0, see `assets.manifest.json`).
+- Tooling: `lookdev.html` with `src/lookdev.ts`, `tools/batch/` (look-dev batches, game films,
+  the final batch), GPU mode for `scripts/visual-capture.ts` and the e2e test.
+
+**Evidence:** `docs/visual/captures/gpu-before` → `docs/visual/captures/bear-v2`; the films
+and turntables from `tools/batch/bear-v2-final.sh`.
+
+**Scorecard:** see AUDIT.md → Bear v2. Hero 2.9 → 3.4, closeup 2.5 → 3.3 (self-scored).
+
+**Budgets:** no new visual downloads (the body is generated); +106 KB of audio. RTX 2060,
+production build: 65–88 fps desktop (was 83–85), 128–131 fps at phone size; loader 8.7 s
+desktop (live before the change: 9.0 s), 2.8 s phone.
+
+**Checks:** `bun run check` ✓ (26 tests) · `E2E_GPU=1 bun run e2e` ✓ (the full hike, 1.3 min).
+The e2e no longer finishes in time on SwiftShader.
+
+**Remaining flaws:** see AUDIT.md. The backpack is the next weakest element beside the bear.
+
+**Next step:** William's queue (DELIVERY-PLAN.md → Work queue): project 10's redesign.
+
+---
+
 # Fidelity pass: session report (stopped early)
 
 The session stopped on request when the cloud credit ran out. The work continues locally from
