@@ -35,7 +35,11 @@ const checks = [
 
 const out = {
   hour: HOUR,
-  sun: { direction: sun, elevationDeg: (sky.sun.elevation * 180) / Math.PI, azimuthDeg: (sky.sun.azimuth * 180) / Math.PI },
+  sun: {
+    direction: sun,
+    elevationDeg: (sky.sun.elevation * 180) / Math.PI,
+    azimuthDeg: (sky.sun.azimuth * 180) / Math.PI,
+  },
   sunLux: sky.sunLux,
   sunColour: sky.sunColour,
   preExposure: sky.preExposure,

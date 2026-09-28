@@ -39,15 +39,15 @@ export function Hint({ onClose }: { onClose: () => void }) {
           <b>Hold Walk</b> (W or ↑) to walk. Let go to stop.
         </li>
         <li>
-          <b>Lean</b> (A/← or D/→) pushes the load that way. When it tips right, lean left.
-          On a hillside, lean uphill.
+          <b>Lean</b> (A/← or D/→) pushes the load that way. When it tips right, lean left. On a
+          hillside, lean uphill.
         </li>
         <li>
           <b>Jump</b> (Space) the logs with a run-up, or trip over them.
         </li>
         <li>
-          On the green, wait for a gap: nobody there is looking up from their phone. In the
-          orchard, lean the stack away from low branches. Then do not stop for the goose.
+          On the green, wait for a gap: nobody there is looking up from their phone. In the orchard,
+          lean the stack away from low branches. Then do not stop for the goose.
         </li>
         <li>Spilled something? Fetch it for a few seconds. Flags save your load.</li>
       </ul>

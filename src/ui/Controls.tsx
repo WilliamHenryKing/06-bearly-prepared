@@ -80,11 +80,7 @@ export function Controls() {
         <span className="text-2xl leading-none">▶</span>
         <span className="block text-xs">Lean</span>
       </HoldButton>
-      <HoldButton
-        k="jump"
-        label="Jump (Space)"
-        className="h-20 w-20 bg-mustard text-ink sm:w-24"
-      >
+      <HoldButton k="jump" label="Jump (Space)" className="h-20 w-20 bg-mustard text-ink sm:w-24">
         <span className="text-2xl leading-none">⤒</span>
         <span className="block text-xs">Jump</span>
       </HoldButton>

@@ -83,7 +83,10 @@ export class Ground {
     }
     // Past the lookout deck the ground falls away down the scarp to the valley.
     const view = smooth(TRAIL_LENGTH + 2, TRAIL_LENGTH + 7, near.d);
-    if (view > 0) h = h * (1 - view) + Math.min(near.y - 6 - Math.max(0, best - 3) * 0.6, landHeight(x, z)) * view;
+    if (view > 0)
+      h =
+        h * (1 - view) +
+        Math.min(near.y - 6 - Math.max(0, best - 3) * 0.6, landHeight(x, z)) * view;
     const pond = this.pond ? this.pond.e(x, z) : Number.POSITIVE_INFINITY;
     if (this.pond && pond < 2) h = this.pond.carve(x, z, h);
     return { dist: best, side, near, height: h, pond };
@@ -124,7 +127,10 @@ export function buildTerrain(
   const nrm = geo.getAttribute("normal") as THREE.BufferAttribute;
   for (let i = 0; i < pos.count; i++) {
     const steep = 1 - nrm.getY(i);
-    const rock = Math.max(smooth(0.18, 0.4, steep), (ledge[i] as number) * smooth(0.08, 0.2, steep));
+    const rock = Math.max(
+      smooth(0.18, 0.4, steep),
+      (ledge[i] as number) * smooth(0.08, 0.2, steep),
+    );
     colors.set([1 - rock * 0.25, dirt[i] as number, rock], i * 3);
   }
   geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
