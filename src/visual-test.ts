@@ -1,0 +1,74 @@
+import { createRun, type RunState, startHike } from "./game/run";
+import { BOOKMARKS } from "./scene/bookmarks";
+import type { GameScene } from "./scene/game-scene";
+
+// Capture hook for visual evidence (docs/visual). Only installed in dev builds or with ?e2e in
+// the URL. window.__VISUAL_TEST__ exposes: ready, bookmarks, renderer, setBookmark(name),
+// clearBookmark(), freeze(on), settle(frames).
+
+export const visual = { frozen: false, frames: 0 };
+const waiters: { n: number; done: () => void }[] = [];
+
+export const visualTestEnabled = () =>
+  import.meta.env.DEV || new URLSearchParams(window.location.search).has("e2e");
+
+export interface VisualApi {
+  ready: boolean;
+  bookmarks: string[];
+  renderer: string;
+  setBookmark(name: string): boolean;
+  clearBookmark(): void;
+  freeze(on?: boolean): void;
+  settle(frames?: number): Promise<void>;
+}
+
+export function installVisualTest(scene: GameScene, setRun: (r: RunState) => void): VisualApi {
+  const gl = scene.stage.renderer.getContext();
+  const info = gl.getExtension("WEBGL_debug_renderer_info");
+  const api: VisualApi = {
+    ready: false,
+    bookmarks: Object.keys(BOOKMARKS),
+    renderer: String(
+      info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
+    ),
+    setBookmark(name) {
+      const b = BOOKMARKS[name];
+      if (!b) return false;
+      const r = createRun(b.load);
+      startHike(r);
+      r.d = b.d;
+      r.speed = 0.9;
+      r.stepPhase = 1.2;
+      r.balance.tilt = b.tilt;
+      setRun(r);
+      scene.reset();
+      scene.setShot(b);
+      document.documentElement.classList.add("visual-test");
+      return true;
+    },
+    clearBookmark() {
+      scene.setShot(null);
+      document.documentElement.classList.remove("visual-test");
+    },
+    freeze(on = true) {
+      visual.frozen = on;
+    },
+    settle(frames = 12) {
+      return new Promise((done) => waiters.push({ n: visual.frames + frames, done }));
+    },
+  };
+  (window as unknown as { __VISUAL_TEST__: VisualApi }).__VISUAL_TEST__ = api;
+  return api;
+}
+
+/** Call once per rendered frame. */
+export function visualFrame() {
+  visual.frames++;
+  for (let i = waiters.length - 1; i >= 0; i--) {
+    const w = waiters[i];
+    if (w && visual.frames >= w.n) {
+      waiters.splice(i, 1);
+      w.done();
+    }
+  }
+}

@@ -107,3 +107,8 @@ body,
     transition: none;
   }
 }
+
+/* Visual evidence captures hide the HUD (see src/visual-test.ts). */
+.visual-test #root {
+  display: none;
+}

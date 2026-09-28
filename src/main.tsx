@@ -20,6 +20,7 @@ import { hasSeenHint, markHintSeen } from "./ui/Hint";
 import { bindKeyboard, readInput, releaseAll } from "./ui/input";
 import { publish, showToast, snapshot } from "./ui/store";
 import "./ui/styles.css";
+import { installVisualTest, visual, visualFrame, visualTestEnabled } from "./visual-test";
 
 // Wiring: one run state, a fixed-step simulation, the three.js scene and the React HUD.
 
@@ -110,6 +111,14 @@ const actions: Actions = {
   },
 };
 
+const visualApi = visualTestEnabled()
+  ? installVisualTest(scene, (r) => {
+      run = r;
+      outcome = null;
+      hudDirty = true;
+    })
+  : null;
+
 bindKeyboard(() => run.phase === "hiking" && !hintOpen);
 window.addEventListener("resize", layout);
 layout();
@@ -124,7 +133,7 @@ let first = true;
 
 function tick(now: number) {
   // Up to 0.1 s per frame keeps the simulation in real time even on slow software rendering.
-  const dt = Math.min(0.1, (now - last) / 1000);
+  const dt = visual.frozen ? 0 : Math.min(0.1, (now - last) / 1000);
   last = now;
   if (run.phase === "hiking" && !hintOpen) {
     acc += dt;
@@ -152,6 +161,7 @@ function tick(now: number) {
     }
   }
   scene.frame(run, dt);
+  visualFrame();
   cues.frame(run, dt, hintOpen);
   sinceHud += dt;
   if (hudDirty || sinceHud > 1 / 15) {
@@ -161,7 +171,10 @@ function tick(now: number) {
   }
   if (first) {
     first = false;
-    requestAnimationFrame(() => worldReady());
+    requestAnimationFrame(() => {
+      worldReady();
+      if (visualApi) visualApi.ready = true;
+    });
   }
   requestAnimationFrame(tick);
 }

@@ -14,6 +14,7 @@ import {
   TRAIL_LENGTH,
 } from "../game/trail";
 import { Bear, restPose } from "./bear";
+import { type Bookmark, bookmarkCamera } from "./bookmarks";
 import { CameraRig } from "./camera";
 import { buildDressing, windUniforms } from "./dressing";
 import { Landmarks } from "./landmarks";
@@ -49,6 +50,7 @@ export class GameScene {
   private silence = false;
   private hush = 0;
   private clock = 0;
+  private shot: Bookmark | null = null;
   private react = 0;
   private reactSide = 1;
   private fetchT = -1;
@@ -146,6 +148,16 @@ export class GameScene {
     for (const m of this.stackMeshes.values()) this.bear.load.remove(m);
     this.stackMeshes.clear();
     return this.tea.pops;
+  }
+
+  /** Evidence captures: hold a fixed camera bookmark instead of the follow camera. */
+  setShot(b: Bookmark | null) {
+    this.shot = b;
+    if (b) {
+      this.stage.camera.fov = b.fov;
+      this.stage.setShift(0, 0);
+    }
+    this.rig.snap();
   }
 
   private rightAt(d: number) {
@@ -294,7 +306,11 @@ export class GameScene {
     this.meadow.update(dt, this.calm);
     this.rig.teaTime = Math.max(0, this.teaTime);
     const mode = s.phase === "packing" ? "pack" : s.phase === "tea" ? "tea" : "hike";
-    this.rig.update(mode, d, s.phase === "tea" ? 0 : s.stats.height, dt, still);
+    if (this.shot) {
+      const cam = bookmarkCamera(this.path, this.shot);
+      this.stage.camera.position.copy(cam.pos);
+      this.stage.camera.lookAt(cam.look);
+    } else this.rig.update(mode, d, s.phase === "tea" ? 0 : s.stats.height, dt, still);
     this.stage.follow(this.bear.root.position);
     this.stage.render();
     this.lastD = s.d;
