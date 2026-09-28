@@ -44,6 +44,19 @@ On the hillside, lean uphill. Jump the logs with a run-up, or trip over them. On
 - **A load you can read.** Weight, height and order change how the stack sways: heavy and low is steady, a lamp on top is magnificently unwise, and anything on the blanket grips better.
 <p align="center"><img src="docs/readme/pond.gif" alt="The bear wades belly-deep through the reedy pond, ripples spreading from each step, and climbs out dark and dripping" width="560"></p>
 
+<p align="center"><img src="docs/readme/lookout.jpg" alt="From the lookout deck: an alpine lake below, a forested valley floor and eroded, snow-capped ranges under path-traced cumulus" width="800"></p>
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/readme/crowd.gif" alt="The bear walks through the village green while villagers cross in front of it, eyes on their glowing phones, under strings of bunting" width="100%"></td>
+    <td width="50%" valign="top"><img src="docs/readme/logs.gif" alt="The bear jumps the first log cleanly, then trips on the second and faceplants while its kettle, tin and blanket fly on ahead" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>The village green: nobody looks up</sub></td>
+    <td align="center"><sub>One clean jump, one faceplant</sub></td>
+  </tr>
+</table>
+
 - **A valley rendered on a GPU, offline.** The mountains were grown in two steps: tectonic uplift against river erosion, then 60 million raindrops of droplet erosion on an RTX 2060 (CUDA, through NVIDIA Warp). The sky is an 8K panorama of cumulus, path-traced through the game's own atmosphere. Sun, sky light, bounce and cloud shadows are baked into the land. The game streams the result as compact textures, so the view costs almost nothing to draw. See [`tools/bake/`](tools/bake/README.md).
 - **Seven stretches, each with its own trouble:**
   - a hillside that tips the load downhill;

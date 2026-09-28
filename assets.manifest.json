@@ -1586,8 +1586,92 @@
           "sha256": "29a50d299e10c5f2fe88e0102a0618030630b0e18168fa4b9569c682eee7bd0a"
         }
       ]
+    },
+    {
+      "id": "vista-bake",
+      "title": "The vista: eroded heights, baked light, lake mask, forest and sky panorama",
+      "sourceUrl": "tools/bake/README.md",
+      "author": "This repository (original work)",
+      "license": "Original work, released with the repository",
+      "retrievalDate": "2026-09-29",
+      "sources": [
+        {
+          "file": "src/scene/land.ts",
+          "note": "the designed plateau, valley and lake the bake grows from"
+        }
+      ],
+      "outputFiles": [
+        {
+          "path": "public/vista/forest.bin.gz",
+          "bytes": 992286,
+          "sha256": "b09f3adf0cfa2408732598f7762f4e041850f6c74caa64c3680d5d11e51ffb73"
+        },
+        {
+          "path": "public/vista/inner-h.bin.gz",
+          "bytes": 1242341,
+          "sha256": "a7d94dd0dcd9e5b6952e79f6b530476ff805786f9dea3470c361838dbc437380"
+        },
+        {
+          "path": "public/vista/inner-light-lo.webp",
+          "bytes": 221644,
+          "sha256": "92596b7cb8d13a90b17fd16d1e4f0ff8023b96ffd080ad263a086485c8448680"
+        },
+        {
+          "path": "public/vista/inner-light.webp",
+          "bytes": 863236,
+          "sha256": "8b74f96021a4fb15e4418d815ce5a9cecbcba47f37d0340739e822a0faa384dc"
+        },
+        {
+          "path": "public/vista/inner-mat.webp",
+          "bytes": 9304,
+          "sha256": "f1468e723086c4b830b5bb50c0fcf93d3bb07abcd68bfd903369af49e0e74695"
+        },
+        {
+          "path": "public/vista/lake.webp",
+          "bytes": 1784,
+          "sha256": "6829ccc912162e4bfa1ccad8f69c80c695764b0ddf570cca75a4b23ffb239177"
+        },
+        {
+          "path": "public/vista/outer-h.bin.gz",
+          "bytes": 1628351,
+          "sha256": "03a0897f9a9cc85ec3c799ad9b4273c962c987d41ff94a49cf2d1262b7d501fe"
+        },
+        {
+          "path": "public/vista/outer-light-lo.webp",
+          "bytes": 298204,
+          "sha256": "0b9a2d2a445cb788c308291f683278bf6c9d1884f4d7ea3767d912a63ce857a3"
+        },
+        {
+          "path": "public/vista/outer-light.webp",
+          "bytes": 1113142,
+          "sha256": "bb7e637c2567ab97df185d82f50a0f710e0502e079a8edc9455ad9c6c49593df"
+        },
+        {
+          "path": "public/vista/sky-lo.webp",
+          "bytes": 95688,
+          "sha256": "305d4d358e0884d89290104fede7cf06a94ea2d30fcec54ae93db764f555f581"
+        },
+        {
+          "path": "public/vista/sky.webp",
+          "bytes": 303362,
+          "sha256": "ac7b95ebcc6e635ce2338fbad68bdcbbea568bfaadb0765b56d5ba4e9c3f9519"
+        },
+        {
+          "path": "public/vista/vista.json",
+          "bytes": 10969,
+          "sha256": "adbbc3c9857b84fe878d65643be6d275e2d54c22a6b7bc3f5f4034efb7919899"
+        }
+      ],
+      "processingSteps": [
+        "streampower.mjs: tectonic uplift against stream-power incision (Cordonnier et al. 2016; Braun and Willett 2013; Priority-Flood + epsilon), 16.4 km at 8 m and 4 km at 2 m, 58 min on the CPU",
+        "erode_gpu.py: 40 M + 20 M droplets of hydraulic erosion (after Beyer 2015) and a talus pass, CUDA via NVIDIA Warp",
+        "render_sky.py: 8192 x 2321 path-traced cumulus sky, 768 spp, delta tracking, approximate Mie phase (Jendersie and d'Eon 2023), in the game's own atmosphere; 64 min on an RTX 2060",
+        "light_gpu.py: materials from the erosion record; sun (disc-sampled, terrain, canopy and cloud shadows), 4096-ray sky gather against the panorama, one bounce",
+        "export.py: delta-coded uint16 heights (gzip), sRGB WebP light maps, flood-filled lake mask, lit tree instances, variance-guided denoised sky, horizon haze by azimuth"
+      ],
+      "obtainedVia": "Rendered locally on 28-29 September 2026 (tools/bake/run-land.sh, run-sky.sh)"
     }
   ],
   "policy": "Only CC0, public-domain, NASA or CC-BY assets ship. Every shipped file is listed with its source, licence, sha256 and processing.",
-  "totalShippedBytes": 6299516
+  "totalShippedBytes": 18829651
 }
