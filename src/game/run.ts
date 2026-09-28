@@ -53,6 +53,9 @@ export interface RunState {
   logsPassed: number;
   stepPhase: number;
   topples: number;
+  /** Items that slid off during the run, and how many were fetched back. */
+  spills: number;
+  fetches: number;
   events: RunEvent[];
 }
 
@@ -86,6 +89,8 @@ export function createRun(packed: ItemId[] = ["kettle", "teacups", "biscuits"]):
     logsPassed: 0,
     stepPhase: 0,
     topples: 0,
+    spills: 0,
+    fetches: 0,
     events: [],
   };
 }
@@ -138,6 +143,7 @@ export function fetchItem(s: RunState, id: ItemId): boolean {
   s.balance = restingBalance();
   s.speed = 0;
   s.busy = FETCH_BUSY;
+  s.fetches += 1;
   s.events.push({ type: "fetch", id });
   return true;
 }
@@ -215,6 +221,7 @@ function slideItems(s: RunState, dt: number) {
     else slide -= Math.sign(slide) * Math.min(Math.abs(slide), SLIDE_SETTLE * dt);
     if (Math.abs(slide) >= 1) {
       s.dropped.push({ id, at: s.d });
+      s.spills += 1;
       s.events.push({ type: "drop", id, side: Math.sign(slide) });
       lost = true;
     } else {

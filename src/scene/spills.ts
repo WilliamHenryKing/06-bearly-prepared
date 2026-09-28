@@ -2,21 +2,32 @@ import * as THREE from "three";
 import type { ItemId } from "../game/items";
 import type { Ground } from "./terrain";
 
-// Items that slid off: they tumble in an arc, bounce softly in the grass and wait to be
-// fetched. Dust puffs mark every landing so the spill always reads.
+// Items that slid off: they tumble in an arc, squash and bounce in the grass, skid to a stop
+// and roll onto a side, then wait under a bobbing marker to be fetched. Fetching flies the
+// item back up toward the stack. Dust puffs mark every landing so a spill always reads.
 
-interface Falling {
+type Phase = "air" | "skid" | "rest" | "return";
+
+interface Spill {
   id: ItemId;
   obj: THREE.Object3D;
   vel: THREE.Vector3;
   spin: THREE.Vector3;
-  resting: boolean;
+  phase: Phase;
   bounces: number;
+  squash: number;
+  t: number;
+  settle: THREE.Euler | null;
+  from: THREE.Vector3;
+  marker: THREE.Mesh;
 }
+
+const QUARTER = Math.PI / 2;
+const snap = (a: number) => Math.round(a / QUARTER) * QUARTER;
 
 export class Spills {
   readonly group = new THREE.Group();
-  private items: Falling[] = [];
+  private items: Spill[] = [];
   private puffs: { mesh: THREE.Mesh; age: number }[] = [];
   private puffGeo = new THREE.SphereGeometry(0.08, 8, 6);
   private puffMat = new THREE.MeshStandardMaterial({
@@ -24,6 +35,13 @@ export class Spills {
     transparent: true,
     roughness: 1,
   });
+  private markerGeo = new THREE.ConeGeometry(0.09, 0.2, 12).rotateX(Math.PI);
+  private markerMat = new THREE.MeshStandardMaterial({
+    color: 0xd9a441,
+    emissive: 0x6a4a10,
+    roughness: 0.5,
+  });
+  private time = 0;
 
   /** Called when a spilled item first hits the ground. */
   onLand: (id: ItemId) => void = () => {};
@@ -35,29 +53,54 @@ export class Spills {
     this.group.attach(obj);
     const vel = side
       .clone()
-      .multiplyScalar(calm ? 1.2 : 1.9)
-      .add(new THREE.Vector3(0, calm ? 0.8 : 2.2, 0));
+      .multiplyScalar(calm ? 1.2 : 2)
+      .add(new THREE.Vector3(0, calm ? 0.8 : 2.4, 0));
     const spin = new THREE.Vector3(
       Math.random() - 0.5,
       Math.random() - 0.5,
-      -side.x,
-    ).multiplyScalar(calm ? 2 : 7);
-    this.items.push({ id, obj, vel, spin, resting: false, bounces: 0 });
+      -side.x * 2,
+    ).multiplyScalar(calm ? 2 : 6);
+    const marker = new THREE.Mesh(this.markerGeo, this.markerMat);
+    marker.visible = false;
+    this.group.add(marker);
+    this.items.push({
+      id,
+      obj,
+      vel,
+      spin,
+      phase: "air",
+      bounces: 0,
+      squash: 0,
+      t: 0,
+      settle: null,
+      from: new THREE.Vector3(),
+      marker,
+    });
   }
 
-  /** Remove a fetched item's ground copy. */
-  take(id: ItemId) {
-    const i = this.items.findIndex((f) => f.id === id);
-    const f = this.items[i];
+  /** A fetched item hops back up toward `to` (the top of the stack) and vanishes into it. */
+  take(id: ItemId, to?: THREE.Vector3) {
+    const f = this.items.find((x) => x.id === id && x.phase !== "return");
     if (!f) return;
     this.puff(f.obj.position);
-    this.group.remove(f.obj);
-    this.items.splice(i, 1);
+    this.group.remove(f.marker);
+    if (!to) {
+      this.remove(f);
+      return;
+    }
+    f.phase = "return";
+    f.t = 0;
+    f.from.copy(f.obj.position);
+    f.vel.copy(to);
+  }
+
+  private remove(f: Spill) {
+    this.group.remove(f.obj, f.marker);
+    this.items.splice(this.items.indexOf(f), 1);
   }
 
   clear() {
-    for (const f of this.items) this.group.remove(f.obj);
-    this.items = [];
+    for (const f of [...this.items]) this.remove(f);
   }
 
   puff(at: THREE.Vector3, n = 6) {
@@ -72,30 +115,8 @@ export class Spills {
   }
 
   update(dt: number) {
-    for (const f of this.items) {
-      if (f.resting) continue;
-      f.vel.y -= 9.8 * dt;
-      f.obj.position.addScaledVector(f.vel, dt);
-      f.obj.rotation.x += f.spin.x * dt;
-      f.obj.rotation.y += f.spin.y * dt;
-      f.obj.rotation.z += f.spin.z * dt;
-      const floor = this.ground.height(f.obj.position.x, f.obj.position.z) + 0.02;
-      if (f.obj.position.y <= floor && f.vel.y < 0) {
-        f.obj.position.y = floor;
-        f.bounces++;
-        if (f.bounces === 1) this.onLand(f.id);
-        this.puff(f.obj.position, f.bounces === 1 ? 7 : 3);
-        f.vel.multiplyScalar(0.35);
-        f.vel.y = Math.abs(f.vel.y) + (f.bounces < 3 ? 1.2 / f.bounces : 0);
-        f.spin.multiplyScalar(0.4);
-        if (f.bounces >= 3) {
-          f.resting = true;
-          // Settle onto its side or base, whichever is closer.
-          f.obj.rotation.x = Math.round(f.obj.rotation.x / (Math.PI / 2)) * (Math.PI / 2);
-          f.obj.rotation.z = Math.round(f.obj.rotation.z / (Math.PI / 2)) * (Math.PI / 2);
-        }
-      }
-    }
+    this.time += dt;
+    for (const f of [...this.items]) this.step(f, dt);
     for (let i = this.puffs.length - 1; i >= 0; i--) {
       const p = this.puffs[i];
       if (!p) continue;
@@ -107,6 +128,72 @@ export class Spills {
         this.group.remove(p.mesh);
         this.puffs.splice(i, 1);
       }
+    }
+  }
+
+  private step(f: Spill, dt: number) {
+    const o = f.obj;
+    f.squash = Math.max(0, f.squash - dt * 6);
+    const sq = Math.sin(f.squash * Math.PI) * 0.3;
+    o.scale.set(1 + sq * 0.5, 1 - sq, 1 + sq * 0.5);
+
+    if (f.phase === "air") {
+      f.vel.y -= 9.8 * dt;
+      o.position.addScaledVector(f.vel, dt);
+      o.rotation.x += f.spin.x * dt;
+      o.rotation.y += f.spin.y * dt;
+      o.rotation.z += f.spin.z * dt;
+      const floor = this.ground.height(o.position.x, o.position.z) + 0.02;
+      if (o.position.y <= floor && f.vel.y < 0) {
+        o.position.y = floor;
+        f.bounces++;
+        f.squash = 1;
+        if (f.bounces === 1) this.onLand(f.id);
+        this.puff(o.position, f.bounces === 1 ? 8 : 3);
+        f.vel.x *= 0.55;
+        f.vel.z *= 0.55;
+        f.vel.y = Math.abs(f.vel.y) * 0.4 + (f.bounces < 3 ? 1.1 / f.bounces : 0);
+        f.spin.multiplyScalar(0.5);
+        if (f.bounces >= 3) {
+          f.phase = "skid";
+          f.t = 0;
+          f.settle = new THREE.Euler(snap(o.rotation.x), o.rotation.y, snap(o.rotation.z));
+        }
+      }
+    } else if (f.phase === "skid") {
+      // Slide to a stop in the grass while rolling onto the nearest side.
+      f.t += dt;
+      const k = Math.min(1, dt * 6);
+      f.vel.multiplyScalar(1 - Math.min(1, dt * 4));
+      o.position.x += f.vel.x * dt;
+      o.position.z += f.vel.z * dt;
+      o.position.y = this.ground.height(o.position.x, o.position.z) + 0.02;
+      if (f.settle) {
+        o.rotation.x += (f.settle.x - o.rotation.x) * k;
+        o.rotation.z += (f.settle.z - o.rotation.z) * k;
+      }
+      if (f.t > 0.6) {
+        f.phase = "rest";
+        f.marker.visible = true;
+      }
+    } else if (f.phase === "rest") {
+      const box = new THREE.Box3().setFromObject(o);
+      f.marker.position.set(
+        o.position.x,
+        box.max.y + 0.3 + Math.sin(this.time * 4) * 0.06,
+        o.position.z,
+      );
+      f.marker.rotation.y += dt * 2;
+    } else {
+      // Return: an arc from the grass to the top of the stack.
+      f.t += dt / 0.55;
+      const t = Math.min(1, f.t);
+      o.position.lerpVectors(f.from, f.vel, t);
+      o.position.y += Math.sin(t * Math.PI) * 1.2;
+      o.rotation.x *= 0.85;
+      o.rotation.z *= 0.85;
+      o.scale.setScalar(1 - t * 0.7);
+      if (t >= 1) this.remove(f);
     }
   }
 }

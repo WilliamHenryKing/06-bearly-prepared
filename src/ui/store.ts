@@ -26,6 +26,7 @@ export interface HudState {
   outcome: TeaOutcome | null;
   toast: { text: string; id: number } | null;
   hint: boolean;
+  tally: { spills: number; fetches: number; topples: number };
 }
 
 let state: HudState | null = null;
@@ -61,6 +62,7 @@ export function snapshot(s: RunState, outcome: TeaOutcome | null, hint: boolean)
     outcome,
     toast,
     hint,
+    tally: { spills: s.spills, fetches: s.fetches, topples: s.topples },
   };
 }
 

@@ -172,6 +172,7 @@ describe("the hike", () => {
     const events = hike(s, () => ({ walk: true, lean: 0 }));
     expect(events.some((e) => e.type === "drop")).toBe(true);
     expect(s.dropped.length).toBeGreaterThan(0);
+    expect(s.spills).toBe(events.filter((e) => e.type === "drop").length);
   });
 
   test("standing still does not move the bear", () => {
@@ -191,6 +192,7 @@ describe("the hike", () => {
     expect(cost).toBeGreaterThan(2);
     expect(cost).toBeLessThan(8);
     expect(fetchItem(s, "biscuits")).toBe(true);
+    expect(s.fetches).toBe(1);
     expect(s.stack).toEqual(["kettle", "biscuits"]);
     expect(totalTime(s)).toBe(cost);
     expect(fetchItem(s, "biscuits")).toBe(false);

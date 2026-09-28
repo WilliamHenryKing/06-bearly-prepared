@@ -18,10 +18,10 @@ const SLOTS: Partial<Record<ItemId, Slot[]>> = {
   chair: [{ make: () => buildProp("chair"), at: [0, 0, 0.05] }],
   kettle: [
     { make: stove, at: [-0.85, 0, -0.75] },
-    { make: () => buildProp("kettle"), at: [-0.85, 0.08, -0.75], turn: 0.8 },
+    { make: () => buildProp("kettle"), at: [-0.85, 0.08, -0.75] },
   ],
   teacups: [
-    { make: cup, at: [0.3, 0.02, -0.75] },
+    { make: cup, at: [-0.55, 0.02, -0.75] },
     { make: cup, at: [0.55, 0.02, -0.55], turn: 2 },
   ],
   lamp: [{ make: litLamp, at: [0.8, 0, 0.25] }],
@@ -32,6 +32,10 @@ export class TeaScene {
   private steam: THREE.Mesh[] = [];
   private lampLight: THREE.PointLight | null = null;
   private time = 0;
+  private kettle: THREE.Object3D | null = null;
+  private stream: THREE.Mesh | null = null;
+  /** When the kettle tips to pour, seconds after arrival. */
+  private pourAt = -1;
   /** When each unpacked piece appears, for the sound of it landing. */
   pops: { id: ItemId; delay: number }[] = [];
 
@@ -39,6 +43,9 @@ export class TeaScene {
     gsap.killTweensOf(this.group.children.map((c) => c.scale));
     this.group.clear();
     this.steam = [];
+    this.kettle = null;
+    this.stream = null;
+    this.pourAt = -1;
     this.lampLight = null;
   }
 
@@ -83,6 +90,18 @@ export class TeaScene {
         this.group.add(m);
       }
     }
+    this.time = 0;
+    this.kettle = pieces.find((o) => o.name === "kettle") ?? null;
+    if (this.kettle && has("teacups")) {
+      this.stream = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.008, 0.012, 0.08, 6),
+        new THREE.MeshStandardMaterial({ color: 0x8a5a2a, roughness: 0.2 }),
+      );
+      this.stream.position.set(-0.56, 0.12, -0.75);
+      this.stream.visible = false;
+      this.group.add(this.stream);
+      this.pourAt = (calm ? 0.3 : 0.6) + pieces.length * 0.28 + 2.6;
+    }
     this.pops = pieces.map((o, i) => ({
       id: o.userData.item as ItemId,
       delay: calm ? 0.3 + i * 0.12 : 0.6 + i * 0.28,
@@ -115,6 +134,13 @@ export class TeaScene {
 
   update(dt: number) {
     this.time += dt;
+    // Pour: the kettle tips toward the cup beside it, a trickle of tea, then back upright.
+    if (this.kettle && this.pourAt >= 0) {
+      const u = (this.time - this.pourAt) / 1.8;
+      const tip = u > 0 && u < 1 ? Math.sin(u * Math.PI) : 0;
+      this.kettle.rotation.z = -0.6 * Math.min(1, tip * 1.6);
+      if (this.stream) this.stream.visible = tip > 0.55;
+    }
     for (const m of this.steam) {
       const k = (this.time * 0.35 + (m.userData.offset as number)) % 1;
       m.position.set(-0.7 + Math.sin(k * 6) * 0.05, 0.4 + k * 0.7, -0.88);

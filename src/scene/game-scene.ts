@@ -1,8 +1,8 @@
 import gsap from "gsap";
 import * as THREE from "three";
 import type { ItemId } from "../game/items";
-import { layoutStack } from "../game/load";
-import type { RunEvent, RunState } from "../game/run";
+import { layoutStack, PACK_TOP } from "../game/load";
+import { FETCH_BUSY, type RunEvent, type RunState } from "../game/run";
 import type { TeaOutcome } from "../game/tea";
 import {
   CHECKPOINTS,
@@ -48,6 +48,9 @@ export class GameScene {
   private silence = false;
   private hush = 0;
   private clock = 0;
+  private react = 0;
+  private reactSide = 1;
+  private fetchT = -1;
   private landmarks: Landmarks;
   private streaks = new WindStreaks();
 
@@ -82,6 +85,8 @@ export class GameScene {
     this.teaTime = -1;
     this.silence = false;
     this.pose = restPose();
+    this.react = 0;
+    this.fetchT = -1;
     this.bear.load.visible = true;
     for (const f of this.flags) (f.material as THREE.MeshStandardMaterial).color.set(0x8a8070);
     this.rig.snap();
@@ -95,9 +100,13 @@ export class GameScene {
         this.stackMeshes.delete(e.id);
         this.spills.drop(e.id, mesh, this.rightAt(s.d).multiplyScalar(e.side), this.calm);
         this.bear.bump(0.8);
+        this.react = 1;
+        this.reactSide = e.side;
       } else if (e.type === "fetch") {
-        this.spills.take(e.id);
+        const top = this.bear.load.localToWorld(new THREE.Vector3(0, PACK_TOP + s.stats.height, 0));
+        this.spills.take(e.id, top);
         this.bear.bump(1);
+        this.fetchT = 0;
       } else if (e.type === "topple") {
         this.flop = { t: 0, fromD: this.lastD, side: e.side };
         const p = pointAt(this.path, this.lastD);
@@ -191,6 +200,20 @@ export class GameScene {
     pose.sit = 0;
     pose.bow = 0;
 
+    // Dismay after a spill; a quick turn-and-trot when fetching something back.
+    this.react = Math.max(0, this.react - dt * 0.9);
+    pose.react = this.calm ? Math.min(this.react, 0.5) : this.react;
+    pose.reactSide = this.reactSide;
+    pose.turn = 0;
+    if (this.fetchT >= 0) {
+      this.fetchT += dt;
+      const u = Math.min(1, this.fetchT / FETCH_BUSY);
+      pose.turn = Math.PI * Math.sin(u * Math.PI);
+      pose.speed = 1.4;
+      pose.stepPhase = this.clock * 9;
+      if (u >= 1) this.fetchT = -1;
+    }
+
     // Worry: the most slid item, or a tilt close to the edge.
     let worst = 0;
     let side = Math.sign(s.balance.tilt) || 1;
@@ -238,7 +261,7 @@ export class GameScene {
 
     const p = pointAt(this.path, d);
     this.bear.root.position.set(p.x, p.y + (this.teaTime >= 0 ? this.seat * pose.sit : 0), p.z);
-    this.bear.root.rotation.y = p.heading;
+    this.bear.root.rotation.y = p.heading + pose.turn;
     this.tea.group.position.set(p.x, p.y + 0.02, p.z);
     this.tea.group.rotation.y = p.heading;
     this.bear.update(pose, dt, this.calm);

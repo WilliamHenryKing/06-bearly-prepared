@@ -22,6 +22,11 @@ export interface BearPose {
   flopSide: number;
   /** 0 … 1 bowed head for a solemn moment. */
   bow: number;
+  /** 0 … 1 dismay just after something falls; `reactSide` is where it fell. */
+  react: number;
+  reactSide: number;
+  /** Extra turn of the whole bear, radians (turning back to fetch). */
+  turn: number;
 }
 
 export const restPose = (): BearPose => ({
@@ -35,6 +40,9 @@ export const restPose = (): BearPose => ({
   flop: 0,
   flopSide: 1,
   bow: 0,
+  react: 0,
+  reactSide: 1,
+  turn: 0,
 });
 
 export const HIP_HEIGHT = 0.42;
@@ -199,7 +207,7 @@ export class Bear {
       arm.rotation.set(
         -(i === 0 ? 1 : -1) * swing * 0.8 * (1 - reach) + reach * 0.6 + p.sit * 0.9,
         0,
-        side * (0.2 + reach * 2.3 + p.alarm * 0.15),
+        side * (0.2 + reach * 2.3 + p.alarm * 0.15 + p.react * 1.9),
       );
     }
 
@@ -207,14 +215,14 @@ export class Bear {
     const glance = p.alarm;
     this.neck.rotation.set(0.05 * walk, 0, -p.tilt * 0.15);
     this.head.rotation.set(
-      glance * 0.55 - p.bow * 0.45 + Math.sin(ph * 2) * 0.03 * walk,
-      -p.alarmSide * glance * 0.5,
+      glance * 0.55 - p.bow * 0.45 + Math.sin(ph * 2) * 0.03 * walk - p.react * 0.35,
+      -p.alarmSide * glance * 0.5 - p.reactSide * p.react * 0.9,
       p.alarmSide * glance * 0.12,
     );
 
     // Eyes widen with alarm; blink when relaxed.
     this.blinkIn -= dt;
-    let lid = 1 + glance * 0.35;
+    let lid = 1 + glance * 0.35 + p.react * 0.4;
     if (this.blinkIn < 0) {
       lid = 0.1;
       if (this.blinkIn < -0.12) this.blinkIn = 2 + ((t * 7.3) % 2.5);

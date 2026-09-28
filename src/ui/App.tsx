@@ -33,7 +33,12 @@ export function App({ actions }: { actions: Actions }) {
       {hud.phase === "hiking" && <Hud hud={hud} onFetch={actions.fetch} />}
       {hud.phase === "hiking" && hud.hint && <Hint onClose={actions.closeHint} />}
       {hud.phase === "tea" && hud.outcome && (
-        <TeaCard outcome={hud.outcome} time={hud.time} onReplay={actions.replay} />
+        <TeaCard
+          outcome={hud.outcome}
+          time={hud.time}
+          tally={hud.tally}
+          onReplay={actions.replay}
+        />
       )}
       <MuteButton />
     </main>

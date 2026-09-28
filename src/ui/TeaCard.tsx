@@ -13,13 +13,23 @@ function nextDare(o: TeaOutcome) {
   return "Next time: bring the standard lamp. For ambience.";
 }
 
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+function summary(t: { spills: number; fetches: number; topples: number }, o: TeaOutcome) {
+  const carried = `Carried ${plural(o.arrived.length, "thing", "things")} to the top`;
+  if (t.spills === 0 && t.topples === 0) return `${carried} without spilling a thing.`;
+  return `${carried}: ${plural(t.spills, "spill", "spills")}, ${plural(t.fetches, "fetch", "fetches")}, ${plural(t.topples, "topple", "topples")}.`;
+}
+
 export function TeaCard({
   outcome,
   time,
+  tally,
   onReplay,
 }: {
   outcome: TeaOutcome;
   time: number;
+  tally: { spills: number; fetches: number; topples: number };
   onReplay: () => void;
 }) {
   const [ready, setReady] = useState(false);
@@ -66,6 +76,7 @@ export function TeaCard({
           </dd>
         </div>
       </dl>
+      <p className="mt-2 text-xs font-bold text-ink-soft">{summary(tally, outcome)}</p>
       {outcome.lost.length > 0 && (
         <p className="mt-2 flex flex-wrap items-center gap-1 text-xs text-ink-soft">
           Left on the trail:
