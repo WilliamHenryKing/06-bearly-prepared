@@ -9,12 +9,12 @@ import * as THREE from "three";
 // own self-occlusion applied inside it.
 
 export const FUR_COLOURS = {
-  bodyRoot: new THREE.Color(0x4a2b17),
-  bodyTip: new THREE.Color(0xa8703f),
-  creamRoot: new THREE.Color(0xc49d72),
-  creamTip: new THREE.Color(0xf4e2c2),
-  darkRoot: new THREE.Color(0x2e1d12),
-  darkTip: new THREE.Color(0x6e4a2e),
+  bodyRoot: new THREE.Color(0x7c5332),
+  bodyTip: new THREE.Color(0xa87445),
+  creamRoot: new THREE.Color(0xcfb08a),
+  creamTip: new THREE.Color(0xf1e2c6),
+  darkRoot: new THREE.Color(0x4c3424),
+  darkTip: new THREE.Color(0x6e4c33),
   pad: new THREE.Color(0x2f2622),
 };
 
@@ -31,10 +31,11 @@ export const furUniforms = {
   uFrizz: { value: 0 },
   /** World-space push at the tips (metres of bend per metre of fur). */
   uWind: { value: new THREE.Vector3() },
-  uLength: { value: 0.04 },
-  uDensity: { value: 320 },
-  uClumpDensity: { value: 42 },
-  uClump: { value: 0.45 },
+  uLength: { value: 0.036 },
+  /** Strands per metre (a jittered lattice). */
+  uDensity: { value: 240 },
+  uClumpDensity: { value: 30 },
+  uClump: { value: 0.2 },
   uBodyRoot: { value: FUR_COLOURS.bodyRoot },
   uBodyTip: { value: FUR_COLOURS.bodyTip },
   uCreamRoot: { value: FUR_COLOURS.creamRoot },
@@ -136,7 +137,13 @@ uniform vec3 uPad;
 ${COMMON}
 `;
 
-// Replaces <color_fragment>: decides strand coverage and colour for this shell.
+// Replaces <color_fragment>: decides coverage and colour for this shell. Shells are alpha-blended,
+// inner to outer, so fur is a soft translucent volume rather than hard cut-outs:
+// - Up close, fine strands show with anti-aliased edges.
+// - Where strands shrink below a pixel, a shell's alpha becomes their true average coverage, so
+//   distant fur is a velvet haze instead of speckle.
+// - Strands are cells of a jittered lattice in bind space (they never swim); gentle mottling and
+//   length variation come from smooth noise, not from the lattice, so no pattern shows.
 const FRAGMENT_FUR = /* glsl */ `
 float furOcc = 1.0;
 vec3 furRand = vec3(0.5);
@@ -146,67 +153,53 @@ float wet = max(vWet * 0.6, furWetness(vRest, 0.035));
   float h = uH;
   vec3 rootC = mix(mix(uBodyRoot, uCreamRoot, vFur.y), uDarkRoot, vFur.z);
   vec3 tipC = mix(mix(uBodyTip, uCreamTip, vFur.y), uDarkTip, vFur.z);
-  float t = 0.0;
-  float jitter = 1.0;
-  // Strand cells per pixel, taken before any discard (derivatives need uniform control flow).
-  // Where a strand shrinks to about a pixel it fattens into a continuous coat, so distant fur
-  // reads as a soft surface instead of sparkling.
-  float far = smoothstep(0.35, 1.1, length(fwidth(vRest * uDensity)));
-  if (h > 0.0) {
-    if (vFur.x < 0.02) discard;
-    // Clumps: strands lean toward their clump's centre as they rise (tighter when wet).
+  // Wet fur gathers into points: strands lean toward the centre of a clump as they rise.
+  vec3 q = vRest;
+  float k = clamp((uClump + wet * 0.85 - uFrizz * 0.1) * h, 0.0, 0.9);
+  if (k > 0.001) {
     vec3 cp = vRest * uClumpDensity;
     vec3 ci = floor(cp);
     vec3 centre = (ci + 0.3 + 0.4 * furHash3(ci + 17.0)) / uClumpDensity;
-    float k = clamp((mix(uClump, 0.95, wet) - uFrizz * 0.15) * h, 0.0, 0.94);
-    vec3 q = centre + (vRest - centre) / (1.0 - k);
-    // Guard hairs: one per lattice cell, jittered away from the cell walls so they never clip.
-    vec3 sp = q * uDensity;
-    vec3 si = floor(sp);
-    vec3 r = furHash3(si);
-    float strand = mix(0.5, 1.0, r.x) * mix(1.0, 0.75, wet);
-    t = h / strand;
+    q = centre + (vRest - centre) / (1.0 - k);
+  }
+  vec3 sp = q * uDensity;
+  vec3 si = floor(sp);
+  vec3 r = furHash3(si);
+  // Smooth variation over the body: some areas a little longer, lighter or warmer.
+  float lengthNoise = furNoise(vRest * 9.0);
+  float mottle = furNoise(vRest * 23.0 + 3.1) - 0.5;
+  float strandLen = mix(0.55, 1.0, r.x) * mix(0.8, 1.1, lengthNoise) * mix(1.0, 0.8, wet) * (1.0 + uFrizz * 0.2);
+  float t = clamp(h / strandLen, 0.0, 1.0);
+  // Strand cells per pixel, before any discard.
+  float px = length(fwidth(vRest * uDensity));
+  float far = smoothstep(0.35, 1.2, px);
+  if (h > 0.0) {
+    if (vFur.x < 0.02 || h > strandLen) discard;
+    float radius = mix(0.34, 0.07, t) * mix(1.0, 0.8, wet);
     float d = length(fract(sp) - (0.25 + 0.5 * r));
-    float radius = mix(mix(0.3, 0.1, t), 0.47 * (1.0 - 0.45 * t), far);
-    // Soft strand edges up close (alpha-to-coverage smooths them); hard ones once a strand is
-    // about a pixel wide, where soft edges would all dither with the same sample pattern.
-    float edge = mix(0.04, 0.002, far);
-    float cover = (1.0 - smoothstep(radius - edge, radius + edge, d)) * step(t, 1.0);
-    // Undercoat: twice as dense, short and fine, filling the roots.
-    vec3 up = q * uDensity * 2.0 + 11.0;
-    vec3 ui = floor(up);
-    vec3 ur = furHash3(ui);
-    float tu = h / (0.42 * mix(0.6, 1.0, ur.x));
-    float du = length(fract(up) - (0.25 + 0.5 * ur));
-    float under = (1.0 - smoothstep(0.22 - edge, 0.22 + edge, du + tu * 0.1)) * step(tu, 1.0);
-    if (under > cover) {
-      t = tu * 0.55;
-      r = ur;
-    }
-    cover = max(cover, under);
-    if (cover < 0.02) discard;
+    float aa = max(fwidth(d), 0.01);
+    float edge = 1.0 - smoothstep(radius - aa, radius + aa, d);
+    // Sub-pixel strands: their average share of the cell, lifted a little for the many shells.
+    float average = min(1.0, 3.14159 * radius * radius * 1.6);
+    float cover = mix(edge, average, far);
+    // The lowest shells are dense underfur.
+    cover = max(cover, 1.0 - smoothstep(0.0, 0.35, h));
+    if (cover < 0.01) discard;
     diffuseColor.a = cover;
-    jitter = mix(0.84 + 0.32 * r.y, 1.0, far * 0.7);
     furRand = r;
-    tipC *= mix(vec3(1.0), vec3(1.06, 0.98, 0.9), r.z);
+    tipC *= mix(vec3(1.0), vec3(1.04, 0.99, 0.95), r.z);
   } else {
     diffuseColor.a = 1.0;
   }
-  // Far away the gradient flattens and the undercoat lifts, so strand and gap stop flickering.
-  float grade = h > 0.0 ? mix(smoothstep(0.0, 1.0, t), 0.45 + 0.55 * t, far) : 0.55 * far;
-  vec3 col = mix(rootC, tipC, grade) * jitter;
+  float grade = h > 0.0 ? smoothstep(0.0, 1.0, t) : 0.0;
+  vec3 col = mix(rootC, tipC, grade) * (1.0 + mottle * 0.14) * (0.96 + 0.08 * r.y);
   col = mix(col, uPad, vFur.w * (1.0 - h));
   // Water fills the gaps between fibres: darker and richer.
   float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
-  col = mix(col, max(vec3(0.0), mix(vec3(luma), col, 1.5)) * 0.15, wet);
+  col = mix(col, max(vec3(0.0), mix(vec3(luma), col, 1.5)) * 0.2, wet);
   diffuseColor.rgb = col;
-  // The velvet rim comes from the strand's own colour, not a cream lobe that ignores it.
-  furSheen = mix(tipC, vec3(1.0), 0.15) * jitter;
-  // Deep fur is shadowed by the fur above it.
-  furOcc = h > 0.0 ? mix(mix(0.7, 0.88, far), 1.0, pow(clamp(t, 0.0, 1.0), 0.75))
-    : mix(0.72, 0.9, far) + 0.08 * vFur.w;
-  // Wet clumps shade one another.
-  furOcc *= mix(1.0, 0.62, wet);
+  furSheen = mix(tipC, vec3(1.0), 0.2);
+  furOcc = mix(0.82, 1.0, grade) * mix(1.0, 0.7, wet);
 }
 `;
 
@@ -218,7 +211,7 @@ roughnessFactor = mix(0.8, 0.55, vFur.w);
 const FRAGMENT_MATERIAL = /* glsl */ `
 #include <lights_physical_fragment>
 #ifdef USE_SHEEN
-  material.sheenColor = furSheen * 0.45 * (1.0 - wet);
+  material.sheenColor = furSheen * 0.6 * (1.0 - wet);
 #endif
 `;
 
@@ -240,7 +233,7 @@ reflectedLight.directSpecular *= furOcc;
   float shine = mix(30.0, 420.0, wet);
   // Wet glints ride the clumped tips; dry sheen runs the whole strand.
   float tips = mix(1.0, smoothstep(0.45, 0.95, uH), wet);
-  float strength = mix(0.028, 0.07, wet) * (0.4 + 1.2 * furRand.z) * tips;
+  float strength = mix(0.02, 0.07, wet) * (0.5 + furRand.z) * tips;
   float wrap = saturate(dot(normal, directLight.direction) * 0.6 + 0.4);
   vec3 tint = mix(diffuseColor.rgb * 2.0, vec3(0.7), wet);
   reflectedLight.directSpecular += directLight.color * tint * pow(sinTH, shine) * strength * wrap * furOcc;
@@ -262,14 +255,16 @@ function furCompile(this: THREE.Material, shader: THREE.WebGLProgramParametersWi
 }
 
 /** One layer of fur: h = 0 is the undercoat skin, h in (0, 1] a shell. */
-export function furMaterial(h: number, coverage: boolean) {
+export function furMaterial(h: number) {
   const m = new THREE.MeshPhysicalMaterial({
     roughness: 0.78,
     sheen: 0.55,
     sheenRoughness: 0.45,
     sheenColor: new THREE.Color(0xffe2c0),
-    alphaTest: h > 0 ? 0.5 : 0,
-    alphaToCoverage: h > 0 && coverage,
+    // Shells blend over the undercoat, inner to outer (their renderOrder), without writing depth.
+    transparent: h > 0,
+    depthWrite: h === 0,
+    alphaToCoverage: false,
   });
   m.userData.uH = { value: h };
   m.onBeforeCompile = furCompile;
@@ -289,11 +284,10 @@ export function buildFur(
   shellGeometry: THREE.BufferGeometry,
   skeleton: THREE.Skeleton,
   count: number,
-  coverage: boolean,
 ): FurLayers {
   const bind = new THREE.Matrix4();
   const make = (geometry: THREE.BufferGeometry, h: number, order: number) => {
-    const mesh = new THREE.SkinnedMesh(geometry, furMaterial(h, coverage));
+    const mesh = new THREE.SkinnedMesh(geometry, furMaterial(h));
     mesh.bind(skeleton, bind);
     mesh.frustumCulled = false;
     mesh.renderOrder = order;

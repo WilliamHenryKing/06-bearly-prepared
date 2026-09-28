@@ -378,7 +378,6 @@ export class Bear {
       geometry(meshes.shells),
       this.skeleton,
       SHELLS[this.tier],
-      this.tier === "high",
     );
     this.fur = fur;
     this.root.add(fur.base, ...fur.shells);

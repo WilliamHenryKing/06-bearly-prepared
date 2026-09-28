@@ -42,7 +42,7 @@
       ],
       "processingSteps": [
         "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
-        "Resized to 1024\u00b2 with Lanczos",
+        "Resized to 1024² with Lanczos",
         "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
       ],
       "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
@@ -87,7 +87,7 @@
       ],
       "processingSteps": [
         "Poly Haven 2k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
-        "Resized to 1024\u00b2 with Lanczos",
+        "Resized to 1024² with Lanczos",
         "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
       ],
       "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
@@ -132,7 +132,7 @@
       ],
       "processingSteps": [
         "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
-        "Resized to 1024\u00b2 with Lanczos",
+        "Resized to 1024² with Lanczos",
         "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
       ],
       "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
@@ -177,7 +177,7 @@
       ],
       "processingSteps": [
         "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
-        "Resized to 1024\u00b2 with Lanczos",
+        "Resized to 1024² with Lanczos",
         "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
       ],
       "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
@@ -222,7 +222,7 @@
       ],
       "processingSteps": [
         "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
-        "Resized to 512\u00b2 with Lanczos",
+        "Resized to 512² with Lanczos",
         "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
       ],
       "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
@@ -267,7 +267,7 @@
       ],
       "processingSteps": [
         "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
-        "Resized to 512\u00b2 with Lanczos",
+        "Resized to 512² with Lanczos",
         "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
       ],
       "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
@@ -312,7 +312,7 @@
       ],
       "processingSteps": [
         "Poly Haven 1k JPG maps (diffuse sRGB, OpenGL normal, AO/roughness/metal)",
-        "Resized to 1024\u00b2 with Lanczos",
+        "Resized to 1024² with Lanczos",
         "Encoded as WebP (normal q88, others q82) with ffmpeg libwebp"
       ]
     },
@@ -342,7 +342,7 @@
       ],
       "processingSteps": [
         "Colour (edge-bled) and alpha maps from the Poly Haven scan",
-        "Alpha merged into the colour map, resized to 512\u00b2",
+        "Alpha merged into the colour map, resized to 512²",
         "Encoded as RGBA WebP q85"
       ],
       "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
@@ -373,7 +373,7 @@
       ],
       "processingSteps": [
         "Colour (edge-bled) and alpha maps from the Poly Haven scan",
-        "Alpha merged into the colour map, resized to 512\u00b2",
+        "Alpha merged into the colour map, resized to 512²",
         "Encoded as RGBA WebP q85"
       ],
       "obtainedVia": "Copied from ODD TIDE (William King's portfolio collection, public/textures or public/models), reused with permission; its manifest records the Poly Haven source"
@@ -589,7 +589,9 @@
           "sha256": "f3b76076d854633b9adc1f2d9d1f004b8f04af6572c069f46e8bdd2223d87a69"
         }
       ],
-      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
+      "processingSteps": [
+        "Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"
+      ]
     },
     {
       "id": "kenney-rpg-audio",
@@ -620,7 +622,9 @@
           "sha256": "17e5d1d69d3ec5733083ba3674b6cecb29b7bc51461fd7995fd83e8416823033"
         }
       ],
-      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
+      "processingSteps": [
+        "Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"
+      ]
     },
     {
       "id": "kenney-interface-sounds",
@@ -661,7 +665,9 @@
           "sha256": "c0d58bea96ecdb6e60666d26ab655cf4d3658aed296e388fcf89804a81aaeecc"
         }
       ],
-      "processingSteps": ["Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"]
+      "processingSteps": [
+        "Trimmed and re-encoded to mono 64 kb/s MP3 with ffmpeg"
+      ]
     },
     {
       "id": "kenney-music-jingles",
@@ -682,7 +688,9 @@
           "sha256": "62cf9d9e5e53970583181b7b73879f1e875f8d346e21462c985092d2edec1898"
         }
       ],
-      "processingSteps": ["Re-encoded to stereo 96 kb/s MP3"]
+      "processingSteps": [
+        "Re-encoded to stereo 96 kb/s MP3"
+      ]
     },
     {
       "id": "oga-childrens-game-music-picnic",
@@ -698,7 +706,9 @@
           "sha256": "a258e3e747359094ed1a702304b148ebbc58157ea067bdb39df76ef2fb4833f1"
         }
       ],
-      "processingSteps": ["Re-encoded to stereo 80 kb/s MP3, looped"]
+      "processingSteps": [
+        "Re-encoded to stereo 80 kb/s MP3, looped"
+      ]
     },
     {
       "id": "oga-park-ambiences",
@@ -772,6 +782,808 @@
           "path": "public/audio/shake-0.mp3",
           "bytes": 14688,
           "sha256": "ac7b1af6cb83381abe801ac693924245438511d54a9b06e17a5cb860b21e7a35"
+        }
+      ]
+    },
+    {
+      "id": "polyhaven-grass_medium_01",
+      "title": "Grass Medium 01",
+      "sourceUrl": "https://polyhaven.com/a/grass_medium_01",
+      "author": "Rob Tuytel, Rico Cilliers",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "grass_medium_01.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/grass_medium_01/grass_medium_01_1k.gltf",
+          "sha256": "3e5e2a314c94e16de54fd7c28e41709731fbd2b1613ab539f1544f622ddb6a85"
+        },
+        {
+          "file": "textures/grass_medium_01_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_medium_01/grass_medium_01_nor_gl_1k.jpg",
+          "sha256": "cae298d3d1d7ff7c7e210ad8ac772b96706e356f9315a6b04fde373ce01ccf1e"
+        },
+        {
+          "file": "textures/grass_medium_01_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_medium_01/grass_medium_01_diff_1k.jpg",
+          "sha256": "71495bd6a11fddcab0aaff38246fea1a7b802a705483f1c7cbca53955daa8050"
+        },
+        {
+          "file": "textures/grass_medium_01_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_medium_01/grass_medium_01_arm_1k.jpg",
+          "sha256": "9a3a30f72bc02f4398967c5b08f2d20cce30bd423a2613b42a727034296fa3ae"
+        },
+        {
+          "file": "grass_medium_01.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/grass_medium_01/grass_medium_01.bin",
+          "sha256": "f4587cabdb96a2e96d8be644923dc954a248edfaaa717a0ff224cacb898bee1f"
+        },
+        {
+          "file": "textures/grass_medium_01_alpha_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/grass_medium_01/grass_medium_01_alpha_1k.png",
+          "sha256": "711a8e49af758d6a6ce1f610db858899a27be19da6d1866bd35c13bc7b8ffeff"
+        }
+      ],
+      "processing": "glTF stripped of images/materials, welded, meshopt; colour + alpha merged to RGBA WebP, normal and ARM WebP, all 1024x1024",
+      "outputFiles": [
+        {
+          "path": "public/textures/veg/grass_medium_01/grass_medium_01_diff.webp",
+          "bytes": 359146,
+          "sha256": "94e9701cf97b1a4350c5a6b9a4c59ea3b44a9fa508d4c5875776edad449d9b04"
+        },
+        {
+          "path": "public/textures/veg/grass_medium_01/grass_medium_01_nor.webp",
+          "bytes": 329134,
+          "sha256": "240209ea7d2b03d9f6b3eaf2f5d8ff3a7fe5f2a4742d9c0c8f55741ce7c56d4e"
+        },
+        {
+          "path": "public/textures/veg/grass_medium_01/grass_medium_01_arm.webp",
+          "bytes": 201054,
+          "sha256": "3df75d56538913bb20b8d248acd91fbce428561c3bba55e0ba59842d4f8f98a0"
+        },
+        {
+          "path": "public/models/veg/grass_medium_01.glb",
+          "bytes": 427620,
+          "sha256": "05a4f2a3fd068813ed303b2d7de75d7ffe84a83958a2a0da87a238180b9b4ea4"
+        }
+      ]
+    },
+    {
+      "id": "polyhaven-grass_medium_02",
+      "title": "Grass Medium 02",
+      "sourceUrl": "https://polyhaven.com/a/grass_medium_02",
+      "author": "Rico Cilliers",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "grass_medium_02.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/grass_medium_02/grass_medium_02_1k.gltf",
+          "sha256": "7037f8d2dfc6aeec0bf72f4eeb96cfa3f6b3a5e6c6f0bc5de537c055b2fd5d04"
+        },
+        {
+          "file": "textures/grass_medium_02_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_medium_02/grass_medium_02_nor_gl_1k.jpg",
+          "sha256": "0b464550366ed72a6cad9c357e19ac4c83fc9adc87272771479138129853b300"
+        },
+        {
+          "file": "textures/grass_medium_02_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_medium_02/grass_medium_02_diff_1k.jpg",
+          "sha256": "91ae99005b449011aceb207a68a937258fd9bfd66ff367d344c50398b1df389c"
+        },
+        {
+          "file": "textures/grass_medium_02_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_medium_02/grass_medium_02_arm_1k.jpg",
+          "sha256": "f0d57bfd95bff7710526b49d47cf2326ee3796e425639d53b983d1472480b57d"
+        },
+        {
+          "file": "grass_medium_02.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/grass_medium_02/grass_medium_02.bin",
+          "sha256": "aa8493bc1544a89e08bf440c7ba361042bfe6ea48b1fefc7e4af2dfff42fdf4a"
+        },
+        {
+          "file": "textures/grass_medium_02_alpha_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/grass_medium_02/grass_medium_02_alpha_1k.png",
+          "sha256": "15976877b3dbd22cd496a9549f1eb7d86710846a3631fb87eedbf046519e339f"
+        }
+      ],
+      "processing": "glTF stripped of images/materials, welded, meshopt; colour + alpha merged to RGBA WebP, normal and ARM WebP, all 1024x1024",
+      "outputFiles": [
+        {
+          "path": "public/textures/veg/grass_medium_02/grass_medium_02_diff.webp",
+          "bytes": 84530,
+          "sha256": "bd9adb5018466f97ebe0caedc465518223c5aa41ad17aae3e7685c0443691c58"
+        },
+        {
+          "path": "public/textures/veg/grass_medium_02/grass_medium_02_nor.webp",
+          "bytes": 25016,
+          "sha256": "6b9f4d34ab1457072c8402f1f1adb214cbbb4bf12296543257a13538a8ac0a09"
+        },
+        {
+          "path": "public/textures/veg/grass_medium_02/grass_medium_02_arm.webp",
+          "bytes": 41832,
+          "sha256": "a5c0e536406d2115d3ea11b2f4b97b1965b9399c6cec54074695026ee9f3caa1"
+        },
+        {
+          "path": "public/models/veg/grass_medium_02.glb",
+          "bytes": 117576,
+          "sha256": "72399a21359376a24feb0247994484111c1beb6c854f9b49c5e1edaa3ecd32f8"
+        }
+      ]
+    },
+    {
+      "id": "polyhaven-grass_bermuda_01",
+      "title": "Grass Bermuda 01",
+      "sourceUrl": "https://polyhaven.com/a/grass_bermuda_01",
+      "author": "Rico Cilliers",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "grass_bermuda_01.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/grass_bermuda_01/grass_bermuda_01_1k.gltf",
+          "sha256": "a1e5bb7fcf33721dc4844d7acacab80759fccec659f1ea643f8701afc542e207"
+        },
+        {
+          "file": "textures/grass_bermuda_01_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_bermuda_01/grass_bermuda_01_nor_gl_1k.jpg",
+          "sha256": "4475b37d6e4d217ce03547216f62d1ef6e65cafda2355fd0cb2aeb6d919b9338"
+        },
+        {
+          "file": "textures/grass_bermuda_01_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_bermuda_01/grass_bermuda_01_diff_1k.jpg",
+          "sha256": "ef202eeb8f8fb3312446009acecc87e5679a7d612e4dee859d8a849e00af5fcb"
+        },
+        {
+          "file": "textures/grass_bermuda_01_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_bermuda_01/grass_bermuda_01_arm_1k.jpg",
+          "sha256": "38190d342fe951c33ff8c37dd2e3de37aca4cc7633e91be8b0d1c1f71057a641"
+        },
+        {
+          "file": "grass_bermuda_01.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/grass_bermuda_01/grass_bermuda_01.bin",
+          "sha256": "b98be48b43afb9d57f6c722d918a49996635064b829b16dc14ef4a48c0f04dae"
+        },
+        {
+          "file": "textures/grass_bermuda_01_alpha_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/grass_bermuda_01/grass_bermuda_01_alpha_1k.png",
+          "sha256": "e58b3052aad2f107cdd763e437f80ed8fb5a31bcc43b44023f7f767cb3d9888e"
+        }
+      ],
+      "processing": "glTF stripped of images/materials, welded, meshopt; colour + alpha merged to RGBA WebP, normal and ARM WebP, all 512x512",
+      "outputFiles": [
+        {
+          "path": "public/textures/veg/grass_bermuda_01/grass_bermuda_01_diff.webp",
+          "bytes": 42422,
+          "sha256": "d2d23b96c5da3cba9f5ff20aec24a854ca08e4a87daca204c3d1b1bb1cbea1c2"
+        },
+        {
+          "path": "public/textures/veg/grass_bermuda_01/grass_bermuda_01_nor.webp",
+          "bytes": 61672,
+          "sha256": "83ed52abcb6ac63f5155d5d88aafe0a947177f1366d053375d0e0248ec5af694"
+        },
+        {
+          "path": "public/textures/veg/grass_bermuda_01/grass_bermuda_01_arm.webp",
+          "bytes": 37642,
+          "sha256": "2ccc3e64c52c80c5a8effdd68dcfed26805430b4ab79bd4ddad66baa932628cd"
+        },
+        {
+          "path": "public/models/veg/grass_bermuda_01.glb",
+          "bytes": 44624,
+          "sha256": "77eb1e091de20c68a49800e3d966199621cb340fceaf5a772615d4e3d82afc3f"
+        }
+      ]
+    },
+    {
+      "id": "polyhaven-shrub_sorrel_01",
+      "title": "Shrub Sorrel 01",
+      "sourceUrl": "https://polyhaven.com/a/shrub_sorrel_01",
+      "author": "Rico Cilliers",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "shrub_sorrel_01.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/shrub_sorrel_01/shrub_sorrel_01_1k.gltf",
+          "sha256": "97e2c9b564610a1077de9e15de07acbf19f2e66619016aeebb7987e191ad3ce1"
+        },
+        {
+          "file": "textures/shrub_sorrel_01_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/shrub_sorrel_01/shrub_sorrel_01_nor_gl_1k.jpg",
+          "sha256": "0bb2e2aba7831a4e642ad6b1985ad82b0a574930ec6982f9a1a66ad8b41a94b3"
+        },
+        {
+          "file": "shrub_sorrel_01.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/shrub_sorrel_01/shrub_sorrel_01.bin",
+          "sha256": "725f46bf6d330486bf22d4b897fa1d8ef01cdc77a72f1400a3939f86740b4e5d"
+        },
+        {
+          "file": "textures/shrub_sorrel_01_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/shrub_sorrel_01/shrub_sorrel_01_arm_1k.jpg",
+          "sha256": "a1b49322e2b0ea988336fca959145dbb53b483b8f9ff2ec5f23dda20c486bdb8"
+        },
+        {
+          "file": "textures/shrub_sorrel_01_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/shrub_sorrel_01/shrub_sorrel_01_diff_1k.jpg",
+          "sha256": "9aa62e57767f5b964b8d52e6406ebadb0205fa469d5a369a946fba13a3bc950f"
+        },
+        {
+          "file": "textures/shrub_sorrel_01_alpha_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/shrub_sorrel_01/shrub_sorrel_01_alpha_1k.png",
+          "sha256": "4788b2a1e8a53cf6f706b1e75bc4007afec3fc823fd3ccaf9b48a52dc1eb04da"
+        }
+      ],
+      "processing": "glTF stripped of images/materials, welded, meshopt; colour + alpha merged to RGBA WebP, normal and ARM WebP, all 512x512",
+      "outputFiles": [
+        {
+          "path": "public/textures/veg/shrub_sorrel_01/shrub_sorrel_01_diff.webp",
+          "bytes": 37234,
+          "sha256": "2519a1e6a71868447a65243193dec77c878d643a6450f6cbc0670bbff042040a"
+        },
+        {
+          "path": "public/textures/veg/shrub_sorrel_01/shrub_sorrel_01_nor.webp",
+          "bytes": 32668,
+          "sha256": "573bfdde27062395332036d258ef19363cf5f7a04bf76f297ea8cb346b0c26b4"
+        },
+        {
+          "path": "public/textures/veg/shrub_sorrel_01/shrub_sorrel_01_arm.webp",
+          "bytes": 13208,
+          "sha256": "1e9cf920486b210930d994f5c50cf2b474a4d454f4760896acd76b43e8df6b61"
+        },
+        {
+          "path": "public/models/veg/shrub_sorrel_01.glb",
+          "bytes": 65292,
+          "sha256": "fb3760ef146974cf8ecde6c48fc507062727ee1482d2403788d90d9c32cea145"
+        }
+      ]
+    },
+    {
+      "id": "polyhaven-flower_heliophila",
+      "title": "Flower Heliophila",
+      "sourceUrl": "https://polyhaven.com/a/flower_heliophila",
+      "author": "Jenelle van Heerden",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "flower_heliophila.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/flower_heliophila/flower_heliophila_1k.gltf",
+          "sha256": "629274399d44a1a9c8666d7a341bf7c5b2083c3ec292166cb23419ff9eb192b1"
+        },
+        {
+          "file": "textures/flower_heliophila_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/flower_heliophila/flower_heliophila_nor_gl_1k.jpg",
+          "sha256": "ab22e05c1f350a2f95914049f832bb52817e951142b259aec751e16a4a75d54a"
+        },
+        {
+          "file": "textures/flower_heliophila_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/flower_heliophila/flower_heliophila_arm_1k.jpg",
+          "sha256": "61c7a47fdf8ff0f5251c0f569588efefad7856b3b069d07c1c025d18a1420e22"
+        },
+        {
+          "file": "textures/flower_heliophila_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/flower_heliophila/flower_heliophila_diff_1k.jpg",
+          "sha256": "50a3eb8afd206eff0ea95ff73db7dc3ca9188d3e120d93a708d2a72790fa0240"
+        },
+        {
+          "file": "flower_heliophila.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/flower_heliophila/flower_heliophila.bin",
+          "sha256": "dd5cba0ea1890ed9dc2e13e109551cefd069fe47bb34f8deb2b302af76b2bab1"
+        },
+        {
+          "file": "textures/flower_heliophila_alpha_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/flower_heliophila/flower_heliophila_alpha_1k.png",
+          "sha256": "5680fb3b96c6061844eb3bfefaa3f7f6fcba04197e0a9df37d947fdf3ad503f5"
+        }
+      ],
+      "processing": "glTF stripped of images/materials, welded, simplified to 0.12, meshopt; colour + alpha merged to RGBA WebP, normal and ARM WebP, all 512x512",
+      "outputFiles": [
+        {
+          "path": "public/textures/veg/flower_heliophila/flower_heliophila_diff.webp",
+          "bytes": 34944,
+          "sha256": "acc346206e480186ae6a00d13d51ee55d4867c9a25d6cb14fdd8001ffb39f158"
+        },
+        {
+          "path": "public/textures/veg/flower_heliophila/flower_heliophila_nor.webp",
+          "bytes": 30836,
+          "sha256": "c36d7ea4cc3bb8ad8aa4e7e54b10162b64a7ca3b36688ff881e9bc2e297bbd0a"
+        },
+        {
+          "path": "public/textures/veg/flower_heliophila/flower_heliophila_arm.webp",
+          "bytes": 28952,
+          "sha256": "6cccf54e60458f7db8dc78bef405caea55fea97826dd0732a2fdbf650350ce66"
+        },
+        {
+          "path": "public/models/veg/flower_heliophila.glb",
+          "bytes": 152804,
+          "sha256": "fa3fd9ab8e40b4c267df212d3cc6c8f423534a4851fd011151c70562aac111c4"
+        }
+      ]
+    },
+    {
+      "id": "polyhaven-fern_02",
+      "title": "Fern 02",
+      "sourceUrl": "https://polyhaven.com/a/fern_02",
+      "author": "Rob Tuytel, Rico Cilliers",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "fern_02.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/fern_02/fern_02_1k.gltf",
+          "sha256": "33974295ee19670af4877705fc7d91f33f42d6302f0d44a625e072271223031f"
+        },
+        {
+          "file": "textures/fern_02_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fern_02/fern_02_arm_1k.jpg",
+          "sha256": "ebfb5d76ce9cbdaec20bcd22dce9b755f0b1b8650ef29ca13555e3e6961025d7"
+        },
+        {
+          "file": "textures/fern_02_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fern_02/fern_02_diff_1k.jpg",
+          "sha256": "a828a6e7b4c01c826911e2eac4b3afc7457dab7b3b392a31c681ed88b7d50029"
+        },
+        {
+          "file": "textures/fern_02_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fern_02/fern_02_nor_gl_1k.jpg",
+          "sha256": "45bce132c6e96a0864bc89ab5da51361ab3f4afa83a6669ae499ab5ca811f621"
+        },
+        {
+          "file": "fern_02.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/fern_02/fern_02.bin",
+          "sha256": "fe1abb762bcbbc7ad9e86925c8080437a62add257d9280e9142fdc85c226e64c"
+        },
+        {
+          "file": "textures/fern_02_alpha_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/fern_02/fern_02_alpha_1k.png",
+          "sha256": "ea3c64284c7ebdeedf484d2d816eae92825ec526140c3bb83859ddc7a64001f9"
+        }
+      ],
+      "processing": "glTF stripped of images/materials, welded, meshopt; colour + alpha merged to RGBA WebP, normal and ARM WebP, all 512x512",
+      "outputFiles": [
+        {
+          "path": "public/textures/veg/fern_02/fern_02_diff.webp",
+          "bytes": 46734,
+          "sha256": "4a73860e33ed45c2f8741c1e1aaef63aabb981b9218337d76237798807dcb0cd"
+        },
+        {
+          "path": "public/textures/veg/fern_02/fern_02_nor.webp",
+          "bytes": 26848,
+          "sha256": "f5edda88c4cf661615e6d497efd0ee9adaaa782272eb6b3feb5e2ee194dbe38d"
+        },
+        {
+          "path": "public/textures/veg/fern_02/fern_02_arm.webp",
+          "bytes": 27020,
+          "sha256": "9d5e3547ee3538f013d8e64f068b2d1c27895774007d59eded02644e923fd364"
+        },
+        {
+          "path": "public/models/veg/fern_02.glb",
+          "bytes": 78132,
+          "sha256": "89ae20a143bc8af6457a4fc9272be58eed5496e83f520c9f3faae718029c9853"
+        }
+      ]
+    },
+    {
+      "id": "polyhaven-moss_01",
+      "title": "Moss 01",
+      "sourceUrl": "https://polyhaven.com/a/moss_01",
+      "author": "Rob Tuytel",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "moss_01.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/moss_01/moss_01_1k.gltf",
+          "sha256": "36fe6cb9889abb33f4dbee402928e260a3e7dfaec043d39b80b1e3afff684f65"
+        },
+        {
+          "file": "textures/moss_01_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/moss_01/moss_01_nor_gl_1k.jpg",
+          "sha256": "531d6bea634ac956d87b176a89740f229ec7e8137a6413e290bab640c6a8b0ec"
+        },
+        {
+          "file": "textures/moss_01_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/moss_01/moss_01_diff_1k.jpg",
+          "sha256": "7c8d0794dd9db0a82f668a276896818d195c644cfed35f0fbf984a3260e70e50"
+        },
+        {
+          "file": "textures/moss_01_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/moss_01/moss_01_arm_1k.jpg",
+          "sha256": "0cf0aabfc370a51e7d330ae01e63ca380f88a9bb0fcfa94730374476183a12cf"
+        },
+        {
+          "file": "moss_01.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/moss_01/moss_01.bin",
+          "sha256": "440e3cadbd93ad383cdbb9b4c17c3236774924c33ff62ac409ab00b8ed622861"
+        },
+        {
+          "file": "textures/moss_01_alpha_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/moss_01/moss_01_alpha_1k.png",
+          "sha256": "00da5c2d0164338c2330587737ff65cefb5575de0c7019ae20bd6f60976608c0"
+        }
+      ],
+      "processing": "glTF stripped of images/materials, welded, meshopt; colour + alpha merged to RGBA WebP, normal and ARM WebP, all 512x512",
+      "outputFiles": [
+        {
+          "path": "public/textures/veg/moss_01/moss_01_diff.webp",
+          "bytes": 39948,
+          "sha256": "5f831b39ef9c406a4b27e268a40db869255328f4e8a42f29ebb20a78b0e5f244"
+        },
+        {
+          "path": "public/textures/veg/moss_01/moss_01_nor.webp",
+          "bytes": 27050,
+          "sha256": "866b0cf525a39e55e312d69a645df7e36886ac7aa15d27e15b11780f2776ea99"
+        },
+        {
+          "path": "public/textures/veg/moss_01/moss_01_arm.webp",
+          "bytes": 22590,
+          "sha256": "7ba84739ed3d9b5e36eb8643c8819820c97f4d3a6b48daa6eb12097d1ab8f93e"
+        },
+        {
+          "path": "public/models/veg/moss_01.glb",
+          "bytes": 21280,
+          "sha256": "26039bee63829ecdee42c704cb59c9b6411bc5f2812d7e2313a2b71476214864"
+        }
+      ]
+    },
+    {
+      "id": "polyhaven-pine_tree_01",
+      "title": "Pine Tree 01",
+      "sourceUrl": "https://polyhaven.com/a/pine_tree_01",
+      "author": "Rob Tuytel, Rico Cilliers",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "pine_tree_01.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/pine_tree_01/pine_tree_01_1k.gltf",
+          "sha256": "c81e8eebbda722313f07bed37b8b9156ce520f7fa95488d83a694d02fffdb469"
+        },
+        {
+          "file": "textures/pine_tree_01_bark_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_bark_nor_gl_1k.jpg",
+          "sha256": "05c46455531781b6cf18cae0648cf627f60ee942adaa8bcbfd1592fc2506a9e0"
+        },
+        {
+          "file": "textures/pine_tree_01_bark_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_bark_diff_1k.jpg",
+          "sha256": "5c76836b01c3536fa0e24207b67bf4f3315b53ebe2b4ecc6f08dfcf3f8d74929"
+        },
+        {
+          "file": "textures/pine_tree_01_bark_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_bark_arm_1k.jpg",
+          "sha256": "336a4680cd571b6076b67afee2310b290b8900d9d126eb39ec1ae92e95be2ea9"
+        },
+        {
+          "file": "textures/pine_tree_01_trunk_a_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_trunk_a_nor_gl_1k.jpg",
+          "sha256": "9d46c05be22de0dcc4af7e3703fde4c7397644b9faeff4914c0469a6bde99caf"
+        },
+        {
+          "file": "textures/pine_tree_01_trunk_a_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_trunk_a_diff_1k.jpg",
+          "sha256": "cfb646cbc4b6cb2db410eb4342174ebe7812a4ae03520491e788722cf1867286"
+        },
+        {
+          "file": "textures/pine_tree_01_trunk_a_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_trunk_a_arm_1k.jpg",
+          "sha256": "7286e74c42b32c2df6cf04c3050b81b2ff636dff1d4389aecfff80bb8d5904da"
+        },
+        {
+          "file": "textures/pine_tree_01_twig_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_twig_nor_gl_1k.jpg",
+          "sha256": "2a02a482a18d20255c800845902d5e0061d2a2d14107d7c4ed0b789414153141"
+        },
+        {
+          "file": "textures/pine_tree_01_twig_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_twig_diff_1k.jpg",
+          "sha256": "e649f0f9bc74d1af5f1a45eaf2fe7a29adaaddfab251f746b983da301e4b80e1"
+        },
+        {
+          "file": "textures/pine_tree_01_twig_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_twig_arm_1k.jpg",
+          "sha256": "47facef9985e8c073184a64d15ea14bd2dc3b3debfb93f3671b6d5ad0dbc163d"
+        },
+        {
+          "file": "textures/pine_tree_01_trunk_b_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_trunk_b_nor_gl_1k.jpg",
+          "sha256": "5e498ee6fee29437196085620c978346ba6731edad8bfc2a2642868f8bf64efe"
+        },
+        {
+          "file": "textures/pine_tree_01_trunk_b_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_trunk_b_diff_1k.jpg",
+          "sha256": "9d39263a9243a4b6cd669de5e3a504eae32d52f5ab48e471cad5f7e52e052508"
+        },
+        {
+          "file": "textures/pine_tree_01_trunk_b_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_tree_01/pine_tree_01_trunk_b_arm_1k.jpg",
+          "sha256": "8141cd57969269604351e366400354e47e7f25294881387e1ea307b48c37b033"
+        },
+        {
+          "file": "pine_tree_01.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/pine_tree_01/pine_tree_01.bin",
+          "sha256": "9955ac7e2f8fe28dc6da8e4d478593ad830f8a23d44e39a2187ef7dffac2646b"
+        }
+      ],
+      "processing": "pending: tools/assets/build-vegetation.mjs",
+      "outputFiles": []
+    },
+    {
+      "id": "polyhaven-fir_tree_01",
+      "title": "Fir Tree 01",
+      "sourceUrl": "https://polyhaven.com/a/fir_tree_01",
+      "author": "Rob Tuytel, Rico Cilliers",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "fir_tree_01.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/fir_tree_01/fir_tree_01_1k.gltf",
+          "sha256": "72e49eefb4ed4db6a8ca5e17fb10980f8463dd300d94589ac774cde95ade7709"
+        },
+        {
+          "file": "textures/fir_tree_01_bark_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_bark_nor_gl_1k.jpg",
+          "sha256": "6a570ab53ab2249ecdfa93e7d3b9a8a2cb1a8ad391400e5a64c708914779b2c3"
+        },
+        {
+          "file": "textures/fir_tree_01_bark_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_bark_diff_1k.jpg",
+          "sha256": "a5d25150ba1bee10008c039f98aa3c73b4477a404d6715c511ca9b5b0f4a9077"
+        },
+        {
+          "file": "textures/fir_tree_01_bark_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_bark_arm_1k.jpg",
+          "sha256": "95d4e9e62cd309fbc38a175e2306379c76c062425b09c0fb72c5b7356a719123"
+        },
+        {
+          "file": "textures/fir_tree_01_trunk_a_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_trunk_a_nor_gl_1k.jpg",
+          "sha256": "9d46c05be22de0dcc4af7e3703fde4c7397644b9faeff4914c0469a6bde99caf"
+        },
+        {
+          "file": "textures/fir_tree_01_trunk_a_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_trunk_a_diff_1k.jpg",
+          "sha256": "cfb646cbc4b6cb2db410eb4342174ebe7812a4ae03520491e788722cf1867286"
+        },
+        {
+          "file": "textures/fir_tree_01_trunk_a_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_trunk_a_arm_1k.jpg",
+          "sha256": "2e439391e98f427207a7fc180eb262f4c1ab3ca0ef570785ea7352826bac342b"
+        },
+        {
+          "file": "textures/fir_tree_01_twig_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_twig_nor_gl_1k.jpg",
+          "sha256": "d470dc39b1d02bbeba06feb0ad818680ef3c24623b4db597270301a5fb8c9369"
+        },
+        {
+          "file": "textures/fir_tree_01_twig_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_twig_diff_1k.jpg",
+          "sha256": "8c0833a10e4fd44498d848cf9e659fe250a3813984cbd679f42430eb98c61fb8"
+        },
+        {
+          "file": "textures/fir_tree_01_twig_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_twig_arm_1k.jpg",
+          "sha256": "d66c81fc073ee7ea97a76b6da2399769f16944e50ef0e007f09c95619f597c79"
+        },
+        {
+          "file": "textures/fir_tree_01_trunk_b_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_trunk_b_nor_gl_1k.jpg",
+          "sha256": "5e498ee6fee29437196085620c978346ba6731edad8bfc2a2642868f8bf64efe"
+        },
+        {
+          "file": "textures/fir_tree_01_trunk_b_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_trunk_b_diff_1k.jpg",
+          "sha256": "9d39263a9243a4b6cd669de5e3a504eae32d52f5ab48e471cad5f7e52e052508"
+        },
+        {
+          "file": "textures/fir_tree_01_trunk_b_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_tree_01/fir_tree_01_trunk_b_arm_1k.jpg",
+          "sha256": "c9e0571b2067cad25a4553119204874e6a5ea3156043cacbd5171155d856cff4"
+        },
+        {
+          "file": "fir_tree_01.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/fir_tree_01/fir_tree_01.bin",
+          "sha256": "ba2ef15a1061a84c73b0a74643e88c118f801ce1664ca7a25a6a79bcc2c63790"
+        }
+      ],
+      "processing": "pending: tools/assets/build-vegetation.mjs",
+      "outputFiles": []
+    },
+    {
+      "id": "polyhaven-fir_sapling",
+      "title": "Fir Sapling",
+      "sourceUrl": "https://polyhaven.com/a/fir_sapling",
+      "author": "Rob Tuytel, Rico Cilliers",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "fir_sapling.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/fir_sapling/fir_sapling_1k.gltf",
+          "sha256": "a9466ca9d8c5b9b2eeeeafd3ce426f8912dcbd98a7281bad8c734833eb35b186"
+        },
+        {
+          "file": "textures/fir_sapling_twigs_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_sapling/fir_sapling_twigs_nor_gl_1k.jpg",
+          "sha256": "34928b2a9d1f722d2f64a7da468c790ecaca9b89c00ac0878a9e0bad26748368"
+        },
+        {
+          "file": "textures/fir_sapling_branches_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_sapling/fir_sapling_branches_diff_1k.jpg",
+          "sha256": "46d216526b6203dbd5dc3cfce5e49d7a4cc1770da2420faab45adf33671c7de4"
+        },
+        {
+          "file": "textures/fir_sapling_twigs_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_sapling/fir_sapling_twigs_diff_1k.jpg",
+          "sha256": "a9900fafad850deeb5f79b928fd7590bca9e8ec8734d2368d4c64bba8b0c5b22"
+        },
+        {
+          "file": "textures/fir_sapling_branches_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_sapling/fir_sapling_branches_nor_gl_1k.jpg",
+          "sha256": "dbe474f6cd593d51a19fb92a627ad900b9ab47dabd1bf60117a2cf9d110f79ea"
+        },
+        {
+          "file": "textures/fir_sapling_twigs_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_sapling/fir_sapling_twigs_arm_1k.jpg",
+          "sha256": "d1ec27a55bb67bfe5fa2c8a41a545dc71769934b142db56ad7c703d4146e1770"
+        },
+        {
+          "file": "textures/fir_sapling_branches_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fir_sapling/fir_sapling_branches_arm_1k.jpg",
+          "sha256": "44c32b056b78c1046aeeb44c973a1d1352ea12d0d7ef2425527555f1256a0964"
+        },
+        {
+          "file": "fir_sapling.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/fir_sapling/fir_sapling.bin",
+          "sha256": "efdebfae6ee4b3ea20c7a85eb9f798ff4953259a3616bcff0b7e580b00f34f40"
+        }
+      ],
+      "processing": "pending: tools/assets/build-vegetation.mjs",
+      "outputFiles": []
+    },
+    {
+      "id": "quaternius-modular-characters",
+      "title": "Ultimate Modular Characters and Ultimate Modular Women (individual characters, glTF)",
+      "sourceUrl": "https://quaternius.com/packs/ultimatemodularcharacters.html",
+      "sourceUrl2": "https://quaternius.com/packs/ultimatemodularwomen.html",
+      "author": "Quaternius",
+      "license": "CC0 1.0",
+      "retrievalDate": "2026-09-28",
+      "sources": [
+        {
+          "file": "m_Adventurer.gltf",
+          "sha256": "21f7a61afb6bd6cef6961490c367594e3c2fc01ec1f041662131172ce763063e"
+        },
+        {
+          "file": "m_Beach.gltf",
+          "sha256": "76e001ea131fd76a1bd938a7862606cb8037f7049b632783580b9bf4da2371a8"
+        },
+        {
+          "file": "m_Casual_2.gltf",
+          "sha256": "55c654d09a2a5ff6e3bd6158d4a1b462f181cd6f1e12a0f5e9d959f9c3abc438"
+        },
+        {
+          "file": "m_Casual_Hoodie.gltf",
+          "sha256": "dd74886c26998a0fa888b4ce557a0932d7d97b0265dd4c763154d081b7a6cb98"
+        },
+        {
+          "file": "m_Farmer.gltf",
+          "sha256": "46d3e85fa8d848ee479ab8e4672c16724ee4ea51f3af5733705a153937f93555"
+        },
+        {
+          "file": "m_Punk.gltf",
+          "sha256": "f9224072f5e6cbb207eca250faa7f1868614a1a984074fe79c7b2862df4feb42"
+        },
+        {
+          "file": "m_Suit.gltf",
+          "sha256": "6c89fbb31b96c1a63ad94e3dee0942bd7b34bc789a5d39fd6a6a1738a9214fb3"
+        },
+        {
+          "file": "m_Worker.gltf",
+          "sha256": "e49f8ec0f8a7de72dd26b1c01e6413c9a87a9116eeee21f9364ccd36bc286335"
+        },
+        {
+          "file": "w_Adventurer.gltf",
+          "sha256": "65094211e53b49f6a834c617cc056834686fe794a0b515a6b97faa3e1130cc95"
+        },
+        {
+          "file": "w_Casual.gltf",
+          "sha256": "b0fe6e92219cd71808844a20a1a8b960fd1cf640a6546dc6362b5add6604e87c"
+        },
+        {
+          "file": "w_Formal.gltf",
+          "sha256": "fdfcf454c4de037d31973eb28d8591bd7763035d49f46b380e63b1c832dc7ddf"
+        },
+        {
+          "file": "w_Punk.gltf",
+          "sha256": "61cc7f85a8e9b700cdb92ae8ebd6e3bdd1e8a510b57027f6c7d8c2b6ff3b0e0f"
+        },
+        {
+          "file": "w_Suit.gltf",
+          "sha256": "937d5c8d08fb5570f6a4e1dd79a3878335444d175aae3b0e9e2babdac36a17f7"
+        },
+        {
+          "file": "w_Worker.gltf",
+          "sha256": "e2bfc1039f429e870a0119e274c2dd45f6304f00c39f4570dfeb9ed4d97a063d"
+        }
+      ],
+      "processing": "animations stripped from each character (glb, pruned, meshopt); clips Walk, Idle, Idle_Neutral, HitRecieve, Wave, Interact kept from m_Suit in anims.glb (resampled, meshopt); smooth normals rebuilt at load",
+      "outputFiles": [
+        {
+          "path": "public/models/people/m_Adventurer.glb",
+          "bytes": 280972,
+          "sha256": "8ca81f2ac02f35e91a517293ada82b9c8977e91aea53a2d373b08cc4e1d4206d"
+        },
+        {
+          "path": "public/models/people/m_Beach.glb",
+          "bytes": 200404,
+          "sha256": "86e7c08edf36b7a3228f9f65c3e7d25b828c6f998d770bfe182f8ace8d7a222c"
+        },
+        {
+          "path": "public/models/people/m_Casual_2.glb",
+          "bytes": 183500,
+          "sha256": "e903b416b42d3dd0cc741cd40f699d5e8959acdaeb23824e2ca998266144c04e"
+        },
+        {
+          "path": "public/models/people/m_Casual_Hoodie.glb",
+          "bytes": 193856,
+          "sha256": "037f05985ad3579e0660a72c537a28347be4122278131d63fde8293983cb8393"
+        },
+        {
+          "path": "public/models/people/m_Farmer.glb",
+          "bytes": 184620,
+          "sha256": "42e98829d058a0f6e6dc7d74a5a5dba1c5349d63a3ca075bfa0de95867226e11"
+        },
+        {
+          "path": "public/models/people/m_Punk.glb",
+          "bytes": 182340,
+          "sha256": "35abad6236e08ef4476df45d179b776ffb96824cb898f27c969c6fe264be1d69"
+        },
+        {
+          "path": "public/models/people/m_Suit.glb",
+          "bytes": 227184,
+          "sha256": "faac2a69f474e66b396a160ccf822a104b66bec9a279fab1ae1c5a3b0c2ba4df"
+        },
+        {
+          "path": "public/models/people/m_Worker.glb",
+          "bytes": 178752,
+          "sha256": "5e3d8d5f83e181eb974ec3bbf63d976ef6ca1c8ba109f71524b61b9da3a61b72"
+        },
+        {
+          "path": "public/models/people/w_Adventurer.glb",
+          "bytes": 210776,
+          "sha256": "e5fc9cc3975f0c94e880c1f6e4867fd245a602cdcb348777af663ead56d8ba48"
+        },
+        {
+          "path": "public/models/people/w_Casual.glb",
+          "bytes": 191920,
+          "sha256": "af8322cc3b4d9eb2ca60376c74f271180568227abde4fe79623a6caea029cabd"
+        },
+        {
+          "path": "public/models/people/w_Formal.glb",
+          "bytes": 185332,
+          "sha256": "55a28c579bedcc907e88b46f8e6ecb5e88aa46a18505281820ae36af7365e6d9"
+        },
+        {
+          "path": "public/models/people/w_Punk.glb",
+          "bytes": 190088,
+          "sha256": "d812393fab6334a65bf848f9daf1af0b0ef1a9993616b02c5c1f0a0d5169cde7"
+        },
+        {
+          "path": "public/models/people/w_Suit.glb",
+          "bytes": 195568,
+          "sha256": "230ebd00da622558a0751e1864bd9a2b923ac0aeaeced337d9aa61302b085d8c"
+        },
+        {
+          "path": "public/models/people/w_Worker.glb",
+          "bytes": 191596,
+          "sha256": "2bf00cf208c6c0bb1f627e9dff00cead1a6684a1c7941e872c998de4361db70e"
+        },
+        {
+          "path": "public/models/people/anims.glb",
+          "bytes": 389412,
+          "sha256": "29a50d299e10c5f2fe88e0102a0618030630b0e18168fa4b9569c682eee7bd0a"
         }
       ]
     }
