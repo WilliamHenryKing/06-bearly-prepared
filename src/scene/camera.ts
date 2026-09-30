@@ -4,7 +4,17 @@ import { LEDGE, type PathPoint, pointAt } from "../game/trail";
 // The camera sits behind and above the bear and looks a few metres up the trail, blending
 // toward where the path is going so corners, logs and the ledge are seen before they arrive.
 
-export type CameraMode = "pack" | "hike" | "tea";
+export type CameraMode = "title" | "pack" | "hike" | "tea";
+
+/** Seconds the opening glide takes, from the title shot down to the bear. */
+export const OPENING_GLIDE = 2.8;
+// The title shot, in the frame of the trail 9 m in ([ahead, right, up]): a slow push in over
+// the plateau toward the trailhead, the valley and the far ranges behind; then a gentle drift.
+const TITLE_D = 9;
+const TITLE_FROM = { eye: [-26, 9, 12], look: [40, -12, 9] } as const;
+const TITLE_TO = { eye: [-11, 4, 4.5], look: [34, -9, 6] } as const;
+const TITLE_PUSH = 11;
+const smooth = (t: number) => t * t * (3 - 2 * t);
 
 const sideFor = (d: number) => (d > LEDGE.from - 3 && d < LEDGE.to ? -1 : 1);
 
@@ -16,6 +26,12 @@ export class CameraRig {
   private side = 1;
   /** Seconds since arriving at the lookout. */
   teaTime = 0;
+  /** Reduced motion: the title shot holds still and the glide is a cut. */
+  reduced = false;
+  private titleTime = 0;
+  private glide = -1;
+  private glideFrom = { pos: new THREE.Vector3(), look: new THREE.Vector3() };
+  private lastMode: CameraMode | null = null;
 
   constructor(
     private camera: THREE.PerspectiveCamera,
@@ -27,6 +43,16 @@ export class CameraRig {
   }
 
   update(mode: CameraMode, d: number, loadHeight: number, dt: number, still: boolean) {
+    if (mode === "title") {
+      this.title(dt);
+      return;
+    }
+    if (this.lastMode === "title") {
+      this.glide = this.reduced ? -1 : 0;
+      this.glideFrom.pos.copy(this.pos);
+      this.glideFrom.look.copy(this.look);
+    }
+    this.lastMode = mode;
     const here = pointAt(this.path, d);
     const ahead = pointAt(this.path, d + 5);
     const portrait = this.camera.aspect < 0.8;
@@ -88,7 +114,15 @@ export class CameraRig {
       look.y = here.y + 0.85 + loadHeight * 0.55;
     }
 
-    if (!this.ready || still) {
+    if (this.glide >= 0) {
+      // Down from the title shot, swinging a little high on the way so it reads as a move.
+      this.glide += dt;
+      const k = smooth(Math.min(1, this.glide / OPENING_GLIDE));
+      this.pos.copy(this.glideFrom.pos).lerp(pos, k);
+      this.pos.y += Math.sin(k * Math.PI) * 1.5;
+      this.look.copy(this.glideFrom.look).lerp(look, k);
+      if (this.glide >= OPENING_GLIDE) this.glide = -1;
+    } else if (!this.ready || still) {
       this.pos.copy(pos);
       this.look.copy(look);
       this.ready = true;
@@ -97,6 +131,27 @@ export class CameraRig {
       this.pos.lerp(pos, k);
       this.look.lerp(look, k);
     }
+    this.camera.position.copy(this.pos);
+    this.camera.lookAt(this.look);
+  }
+
+  private title(dt: number) {
+    this.titleTime += dt;
+    this.lastMode = "title";
+    const p = pointAt(this.path, TITLE_D);
+    const fwd = new THREE.Vector3(-Math.sin(p.heading), 0, -Math.cos(p.heading));
+    const right = new THREE.Vector3(Math.cos(p.heading), 0, -Math.sin(p.heading));
+    const at = (o: readonly [number, number, number]) =>
+      new THREE.Vector3(p.x, p.y + o[2], p.z)
+        .addScaledVector(fwd, o[0])
+        .addScaledVector(right, o[1]);
+    const t = this.titleTime;
+    const k = this.reduced ? 1 : smooth(Math.min(1, t / TITLE_PUSH));
+    this.pos.copy(at(TITLE_FROM.eye)).lerp(at(TITLE_TO.eye), k);
+    this.look.copy(at(TITLE_FROM.look)).lerp(at(TITLE_TO.look), k);
+    if (!this.reduced && t > TITLE_PUSH)
+      this.pos.addScaledVector(right, Math.sin((t - TITLE_PUSH) * 0.12) * 2.2);
+    this.ready = true;
     this.camera.position.copy(this.pos);
     this.camera.lookAt(this.look);
   }

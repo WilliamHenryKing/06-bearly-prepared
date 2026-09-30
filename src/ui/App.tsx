@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from "react";
 import type { ItemId } from "../game/items";
-import { Hint } from "./Hint";
 import { Hud } from "./Hud";
 import { MuteButton } from "./MuteButton";
+import { Guide, GuideButton, TitleCard } from "./Opening";
 import { PackPanel } from "./PackPanel";
 import { store } from "./store";
 import { TeaCard } from "./TeaCard";
@@ -10,10 +10,12 @@ import { TeaCard } from "./TeaCard";
 export interface Actions {
   toggle: (id: ItemId) => void;
   move: (index: number, dir: 1 | -1) => void;
+  begin: () => void;
   start: () => void;
   fetch: (id: ItemId) => void;
   replay: () => void;
-  closeHint: () => void;
+  skipGuide: () => void;
+  showGuide: () => void;
 }
 
 export function App({ actions }: { actions: Actions }) {
@@ -21,7 +23,8 @@ export function App({ actions }: { actions: Actions }) {
   if (!hud) return null;
   return (
     <main className="pointer-events-none fixed inset-0 select-none" aria-label="Bearly Prepared">
-      {hud.phase === "packing" && (
+      {hud.opening === "title" && <TitleCard onBegin={actions.begin} />}
+      {hud.phase === "packing" && hud.opening === "done" && (
         <PackPanel
           packed={hud.packed}
           stats={hud.stats}
@@ -31,7 +34,10 @@ export function App({ actions }: { actions: Actions }) {
         />
       )}
       {hud.phase === "hiking" && <Hud hud={hud} onFetch={actions.fetch} />}
-      {hud.phase === "hiking" && hud.hint && <Hint onClose={actions.closeHint} />}
+      {hud.phase === "hiking" && hud.guide >= 0 && (
+        <Guide step={hud.guide} onSkip={actions.skipGuide} />
+      )}
+      {hud.phase === "hiking" && <GuideButton onClick={actions.showGuide} />}
       {hud.phase === "tea" && hud.outcome && (
         <TeaCard
           outcome={hud.outcome}

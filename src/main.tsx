@@ -13,7 +13,9 @@ import {
   togglePack,
 } from "./game/run";
 import { type TeaOutcome, teaOutcome } from "./game/tea";
+import { LOGS } from "./game/trail";
 import { worldReady } from "./loader";
+import { OPENING_GLIDE } from "./scene/camera";
 import { GameScene } from "./scene/game-scene";
 import { detectQuality, tierSettings } from "./scene/quality";
 import { type Actions, App } from "./ui/App";
@@ -37,7 +39,28 @@ document.body.prepend(canvas);
 const scene = new GameScene(canvas, mobile, calm, tierSettings(detectQuality(mobile)));
 let run: RunState = createRun();
 let outcome: TeaOutcome | null = null;
-let hintOpen = false;
+// The opening: a title card over the valley, then a glide down to the bear (skipped for
+// captures and tests, unless ?intro).
+let opening: "title" | "glide" | "done" =
+  !visualTestEnabled() || new URLSearchParams(window.location.search).has("intro")
+    ? "title"
+    : "done";
+let openingClock = 0;
+scene.title = opening === "title";
+// The guided first minute (-1: off). Each step waits for the player: walk, lean against the
+// sway, steady the load, then the first log.
+let guide = -1;
+let guideClock = 0;
+let guideFrom = { d: 0, logs: 0, trips: 0 };
+let leanHeld = 0;
+function guideTo(step: number) {
+  guide = step;
+  guideClock = 0;
+  guideFrom = { d: run.d, logs: run.logsPassed, trips: run.trips };
+  leanHeld = 0;
+  if (step < 0) markHintSeen();
+  hudDirty = true;
+}
 let hudDirty = true;
 const cues = new SoundCues();
 scene.onSpillLand = (id) => cues.land(id);
@@ -74,14 +97,24 @@ const LINES: Partial<Record<ItemId, string>> = {
   blanket: "The blanket flops away.",
 };
 
-function layout() {
+function layout(resize = true) {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  scene.stage.resize(w, h);
+  if (resize) scene.stage.resize(w, h);
   const wide = w >= 1024;
   if (run.phase === "hiking") scene.stage.setShift(0, -Math.round(h * 0.05));
-  else if (wide) scene.stage.setShift(200, 0);
-  else scene.stage.setShift(0, Math.round(h * 0.22));
+  else {
+    // The title card is on the left (at the foot on a phone) and the pack panel on the right
+    // (at the foot): the view slides between the two framings as the opening glides down.
+    const title = wide ? [-Math.round(w * 0.15), 0] : [0, Math.round(h * 0.2)];
+    const pack = wide ? [200, 0] : [0, Math.round(h * 0.22)];
+    const u = opening === "title" ? 0 : opening === "glide" ? openingClock / OPENING_GLIDE : 1;
+    const k = Math.min(1, u) * Math.min(1, u) * (3 - 2 * Math.min(1, u));
+    scene.stage.setShift(
+      Math.round((title[0] ?? 0) + ((pack[0] ?? 0) - (title[0] ?? 0)) * k),
+      Math.round((title[1] ?? 0) + ((pack[1] ?? 0) - (title[1] ?? 0)) * k),
+    );
+  }
 }
 
 const actions: Actions = {
@@ -97,11 +130,19 @@ const actions: Actions = {
     sound.play("ui-tick", { gain: 0.7 });
     hudDirty = true;
   },
+  begin() {
+    if (opening !== "title") return;
+    opening = "glide";
+    openingClock = 0;
+    scene.title = false;
+    sound.play("ui-confirm", { gain: 0.6 });
+    hudDirty = true;
+  },
   start() {
     startHike(run);
     releaseAll();
     sound.play("jingle-start", { gain: 0.6 });
-    hintOpen = !hasSeenHint();
+    guideTo(hasSeenHint() ? -1 : 0);
     layout();
     hudDirty = true;
   },
@@ -119,11 +160,13 @@ const actions: Actions = {
     layout();
     hudDirty = true;
   },
-  closeHint() {
-    hintOpen = false;
-    markHintSeen();
+  skipGuide() {
+    guideTo(-1);
     sound.play("ui-confirm", { gain: 0.6 });
-    hudDirty = true;
+  },
+  showGuide() {
+    guideTo(0);
+    sound.play("ui-select", { gain: 0.6 });
   },
 };
 
@@ -139,8 +182,15 @@ const visualApi = visualTestEnabled()
     )
   : null;
 
-bindKeyboard(() => run.phase === "hiking" && !hintOpen);
-window.addEventListener("resize", layout);
+bindKeyboard(() => run.phase === "hiking");
+// The title card's Enter: begin (its button has focus, so this is for keys pressed elsewhere).
+window.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || e.repeat || opening !== "title") return;
+  if ((e.target as HTMLElement | null)?.closest("button")) return;
+  e.preventDefault();
+  actions.begin();
+});
+window.addEventListener("resize", () => layout());
 layout();
 
 const rootEl = document.getElementById("root");
@@ -181,9 +231,26 @@ function tick(now: number) {
       slowFrames = 0;
     }
   }
-  if (run.phase === "hiking" && !hintOpen) {
+  if (opening === "glide") {
+    openingClock += raw;
+    if (openingClock >= OPENING_GLIDE) {
+      opening = "done";
+      hudDirty = true;
+    }
+    layout(false);
+  }
+  if (run.phase === "hiking") {
     acc += dt;
     const input = readInput();
+    if (guide >= 0) {
+      guideClock += dt;
+      if (input.lean !== 0) leanHeld += dt;
+      if (guide === 0 && run.d - guideFrom.d > 2.5) guideTo(1);
+      else if (guide === 1 && (leanHeld > 0.5 || guideClock > 10)) guideTo(2);
+      else if (guide === 2 && guideClock > 7) guideTo(run.logsPassed >= LOGS.length ? -1 : 3);
+      else if (guide === 3 && (run.logsPassed > guideFrom.logs || run.trips > guideFrom.trips))
+        guideTo(-1);
+    }
     while (acc >= STEP) {
       stepRun(run, input, STEP);
       acc -= STEP;
@@ -217,10 +284,13 @@ function tick(now: number) {
   }
   scene.frame(run, dt);
   visualFrame();
-  cues.frame(run, dt, hintOpen);
+  cues.frame(run, dt, false);
   sinceHud += dt;
   if (hudDirty || sinceHud > 1 / 15) {
-    publish(snapshot(run, outcome, hintOpen));
+    // The logs step waits, hidden, until the next log is in sight.
+    const nextLog = LOGS[run.logsPassed]?.at ?? 0;
+    const shown = guide === 3 && run.d < nextLog - 9 ? -1 : guide;
+    publish(snapshot(run, outcome, shown, opening));
     hudDirty = false;
     sinceHud = 0;
   }

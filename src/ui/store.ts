@@ -25,7 +25,10 @@ export interface HudState {
   busy: boolean;
   outcome: TeaOutcome | null;
   toast: { text: string; id: number } | null;
-  hint: boolean;
+  /** The guided first minute's step showing (-1: none). */
+  guide: number;
+  /** The opening: title card, the glide down to the bear, then packing. */
+  opening: "title" | "glide" | "done";
   tally: { spills: number; fetches: number; topples: number };
 }
 
@@ -34,7 +37,12 @@ const listeners = new Set<() => void>();
 let toastId = 0;
 let toast: HudState["toast"] = null;
 
-export function snapshot(s: RunState, outcome: TeaOutcome | null, hint: boolean): HudState {
+export function snapshot(
+  s: RunState,
+  outcome: TeaOutcome | null,
+  guide: number,
+  opening: HudState["opening"],
+): HudState {
   let worst: HudState["worstSlide"] = null;
   s.slides.forEach((v, i) => {
     const id = s.stack[i];
@@ -61,7 +69,8 @@ export function snapshot(s: RunState, outcome: TeaOutcome | null, hint: boolean)
     busy: s.busy > 0,
     outcome,
     toast,
-    hint,
+    guide,
+    opening,
     tally: { spills: s.spills, fetches: s.fetches, topples: s.topples },
   };
 }

@@ -26,7 +26,6 @@ test("pack a sensible load and walk it to the lookout", async ({ page }) => {
   await expect(stack).toHaveText([/Teacups/, /Blanket/, /Kettle/]);
 
   await page.getByRole("button", { name: "Set off" }).click();
-  await page.getByRole("button", { name: "Off we go" }).click();
   await expect(page.getByRole("progressbar", { name: "Trail progress" })).toBeVisible();
 
   await page.keyboard.down("w");

@@ -85,6 +85,8 @@ export class GameScene {
   private wade = 0;
   private footfallHandler: ((side: number, strength: number, splash: boolean) => void) | null =
     null;
+  /** While the opening title is up, the camera flies the title shot instead of the pack view. */
+  title = false;
   /** The scene is drawn once its shaders are compiled (behind the arrival veil until then). */
   private warmed = false;
   private readonly born = performance.now();
@@ -131,6 +133,7 @@ export class GameScene {
     // The bunting flutters in its shader, which the AO pre-pass would draw at rest.
     this.stage.aoHidden.push(this.streaks.group, this.village.bunting);
     this.rig = new CameraRig(this.stage.camera, this.path);
+    this.rig.reduced = calm;
     windUniforms.uSway.value = calm ? 0.25 : 1;
   }
 
@@ -532,7 +535,8 @@ export class GameScene {
     this.village.update(s.goose, dt, this.calm);
     this.wetness.update(dt, pose.speed, onLedge && g.strength > 0.2);
     this.rig.teaTime = Math.max(0, this.teaTime);
-    const mode = s.phase === "packing" ? "pack" : s.phase === "tea" ? "tea" : "hike";
+    const mode =
+      s.phase === "packing" ? (this.title ? "title" : "pack") : s.phase === "tea" ? "tea" : "hike";
     if (this.shot) {
       const cam = bookmarkCamera(this.path, this.shot);
       this.stage.camera.position.copy(cam.pos);

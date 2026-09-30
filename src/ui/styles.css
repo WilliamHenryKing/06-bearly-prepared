@@ -36,6 +36,35 @@ body,
   touch-action: none;
 }
 
+/* The opening title card: warm paper light from the left (from the foot on a phone). */
+.title-shade {
+  background: linear-gradient(
+    90deg,
+    rgb(246 238 219 / 0.95) 0%,
+    rgb(246 238 219 / 0.8) 30%,
+    rgb(246 238 219 / 0) 60%
+  );
+}
+@media (max-width: 1023px) {
+  .title-shade {
+    background: linear-gradient(
+      0deg,
+      rgb(246 238 219 / 0.96) 0%,
+      rgb(246 238 219 / 0.78) 42%,
+      rgb(246 238 219 / 0) 72%
+    );
+  }
+}
+.rise:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.rise:nth-child(3) {
+  animation-delay: 0.28s;
+}
+.rise:nth-child(4) {
+  animation-delay: 0.44s;
+}
+
 /* A felt patch: warm paper with a stitched edge. */
 .patch {
   background: var(--color-paper);
