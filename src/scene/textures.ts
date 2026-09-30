@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import type { SceneAssets } from "./assets";
 
 // PBR texture sets shipped in public/textures/<set>/ as WebP (see assets.manifest.json):
 // colour in sRGB, everything else linear. ARM packs AO · roughness · metalness, Poly Haven style.
@@ -18,27 +19,36 @@ export function setAnisotropy(a: number) {
   anisotropy = a;
 }
 
-export function loadTexture(url: string, colour: boolean): Promise<THREE.Texture> {
+export function loadTexture(
+  url: string,
+  colour: boolean,
+  assets?: SceneAssets,
+): Promise<THREE.Texture> {
+  assets?.assertAlive();
+  const textures = assets?.textures ?? cache;
   const key = `${url}|${colour}`;
-  const hit = cache.get(key);
+  const hit = textures.get(key);
   if (hit) return hit;
   const promise = loader.loadAsync(`${import.meta.env.BASE_URL}${url}`).then((t) => {
     t.colorSpace = colour ? THREE.SRGBColorSpace : THREE.NoColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.anisotropy = anisotropy;
     t.name = url;
+    assets?.resources.retain(t);
+    assets?.assertAlive();
     return t;
   });
-  cache.set(key, promise);
-  return promise;
+  const result = assets ? assets.wait(promise) : promise;
+  textures.set(key, result);
+  return result;
 }
 
-export async function loadPbrSet(name: string): Promise<PbrSet> {
+export async function loadPbrSet(name: string, assets?: SceneAssets): Promise<PbrSet> {
   const base = `textures/${name}/${name}`;
   const [colour, normal, arm] = await Promise.all([
-    loadTexture(`${base}_diff.webp`, true),
-    loadTexture(`${base}_nor.webp`, false),
-    loadTexture(`${base}_arm.webp`, false),
+    loadTexture(`${base}_diff.webp`, true, assets),
+    loadTexture(`${base}_nor.webp`, false, assets),
+    loadTexture(`${base}_arm.webp`, false, assets),
   ]);
   return { colour, normal, arm };
 }

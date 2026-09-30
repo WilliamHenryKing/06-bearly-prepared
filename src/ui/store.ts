@@ -2,7 +2,7 @@ import type { ItemId } from "../game/items";
 import { effectiveGrip, type LoadStats } from "../game/load";
 import { fetchCost, type Phase, type RunState, totalTime } from "../game/run";
 import type { TeaOutcome } from "../game/tea";
-import { gustAt, LEDGE, TRAIL_LENGTH, toppleLimit, type Zone, zoneAt } from "../game/trail";
+import { gustAt, LEDGE, LOGS, TRAIL_LENGTH, toppleLimit, type Zone, zoneAt } from "../game/trail";
 
 // A tiny external store the render loop publishes into and React reads from.
 
@@ -20,6 +20,7 @@ export interface HudState {
   dropped: { id: ItemId; cost: number }[];
   time: number;
   progress: number;
+  nextLogDistance: number | null;
   zone: Zone;
   gust: { dir: number; strength: number; warning: boolean } | null;
   busy: boolean;
@@ -29,7 +30,7 @@ export interface HudState {
   guide: number;
   /** The opening: title card, the glide down to the bear, then packing. */
   opening: "title" | "glide" | "done";
-  tally: { spills: number; fetches: number; topples: number };
+  tally: { spills: number; fetches: number; topples: number; trips: number };
 }
 
 let state: HudState | null = null;
@@ -64,14 +65,15 @@ export function snapshot(
     dropped: s.dropped.map((x) => ({ id: x.id, cost: fetchCost(s, x) })),
     time: totalTime(s),
     progress: s.d / TRAIL_LENGTH,
+    nextLogDistance: LOGS[s.logsPassed] ? (LOGS[s.logsPassed]?.at ?? 0) - s.d : null,
     zone: zoneAt(s.d),
     gust: onLedge ? gustAt(s.gustClock) : null,
-    busy: s.busy > 0,
+    busy: s.busy > 0 || s.airborne,
     outcome,
     toast,
     guide,
     opening,
-    tally: { spills: s.spills, fetches: s.fetches, topples: s.topples },
+    tally: { spills: s.spills, fetches: s.fetches, topples: s.topples, trips: s.trips },
   };
 }
 
@@ -82,6 +84,10 @@ export function publish(next: HudState) {
 
 export function showToast(text: string) {
   toast = { text, id: ++toastId };
+}
+
+export function clearToast() {
+  toast = null;
 }
 
 export const store = {

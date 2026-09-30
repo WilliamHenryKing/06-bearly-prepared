@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { BRANCH_REACH, BRANCHES, GOOSE, type GooseState } from "../game/obstacles";
 import { GREEN, LANE, ORCHARD, type PathPoint, pointAt } from "../game/trail";
+import type { SceneAssets } from "./assets";
 import { paintedWood } from "./materials";
 import { loadTexture } from "./textures";
 import { leafDome, swaying } from "./vegetation";
@@ -20,7 +21,7 @@ type Ground = (x: number, z: number) => number;
 const wood = paintedWood(0x6d4a2c);
 const iron = new THREE.MeshStandardMaterial({ color: 0x1f3a2c, roughness: 0.45, metalness: 0.6 });
 // Foliage from the meadow's scanned leaf-card atlas (the same as its shrubs), swaying in the
-// wind; bark from the scanned bark set. Textures arrive shortly after the meshes are built.
+// wind; bark from the scanned bark set. The scene owns their startup and cancellation.
 const leafMat = swaying(
   new THREE.MeshStandardMaterial({
     color: 0x9cc57a,
@@ -32,17 +33,6 @@ const leafMat = swaying(
   0.25,
 );
 const barkMat = new THREE.MeshStandardMaterial({ color: 0xe6ddd2, roughness: 0.95 });
-void loadTexture("textures/shrub_02/shrub_02_cards.webp", true).then((t) => {
-  leafMat.map = t;
-  leafMat.needsUpdate = true;
-});
-void loadTexture("textures/bark_brown_02/bark_brown_02_diff.webp", true).then((t) => {
-  const bark = t.clone();
-  bark.repeat.set(1, 3);
-  bark.needsUpdate = true;
-  barkMat.map = bark;
-  barkMat.needsUpdate = true;
-});
 const appleMat = new THREE.MeshStandardMaterial({ color: 0xb8231c, roughness: 0.35 });
 const glassMat = new THREE.MeshStandardMaterial({
   color: 0xfff1c9,
@@ -453,6 +443,7 @@ class Goose {
 
 export class Village {
   readonly group = new THREE.Group();
+  readonly ready: Promise<void>;
   /** Every bunting flag on the green, fluttering in its shader. */
   readonly bunting: THREE.Mesh;
   private boughs: THREE.Group[] = [];
@@ -464,6 +455,7 @@ export class Village {
   constructor(
     private path: readonly PathPoint[],
     private ground: Ground,
+    private assets: SceneAssets,
   ) {
     let seed = 7127;
     const rand = () => {
@@ -542,6 +534,22 @@ export class Village {
       put(gate, d, 1.5, d === LANE.from ? -1.2 : 1.2);
     }
     this.group.add(this.goose.root);
+    this.ready = this.load();
+  }
+
+  private async load() {
+    const [leaves, barkSource] = await Promise.all([
+      loadTexture("textures/shrub_02/shrub_02_cards.webp", true, this.assets),
+      loadTexture("textures/bark_brown_02/bark_brown_02_diff.webp", true, this.assets),
+    ]);
+    this.assets.assertAlive();
+    leafMat.map = leaves;
+    leafMat.needsUpdate = true;
+    const bark = this.assets.resources.own(barkSource.clone());
+    bark.repeat.set(1, 3);
+    bark.needsUpdate = true;
+    barkMat.map = bark;
+    barkMat.needsUpdate = true;
   }
 
   /** What moves once built (kept out of the static batch). */
@@ -578,6 +586,7 @@ export class Village {
 
   /** Put the apples back (a new run). */
   reset() {
+    this.shake.fill(0);
     for (const b of this.boughs) {
       const a = b.getObjectByName("apple");
       if (a) a.visible = true;
@@ -587,15 +596,17 @@ export class Village {
   }
 
   update(goose: GooseState, dt: number, calm: boolean) {
-    this.time += dt;
+    if (!calm) this.time += dt;
     // Bunting flutters.
     flutter.uTime.value = this.time;
-    flutter.uFlap.value = calm ? 0.05 : 0.18;
+    flutter.uFlap.value = calm ? 0 : 0.18;
     // Boughs shake after a clip, and sway a little always.
     this.boughs.forEach((b, i) => {
       const k = this.shake[i] as number;
       this.shake[i] = Math.max(0, k - dt * 1.4);
-      b.rotation.z = Math.sin(this.time * 1.3 + i) * 0.01 + Math.sin(this.time * 22) * 0.08 * k * k;
+      b.rotation.z = calm
+        ? 0
+        : Math.sin(this.time * 1.3 + i) * 0.01 + Math.sin(this.time * 22) * 0.08 * k * k;
     });
     for (const f of this.fallen) {
       f.t += dt;

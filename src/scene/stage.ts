@@ -16,6 +16,7 @@ import {
   skyAmbient,
 } from "./render/sky";
 import { type Celestial, celestial } from "./render/sky-model";
+import { SceneResources } from "./resources";
 
 // One lighting model (after ODD TIDE's rig and pipeline, reused with permission): a physical sky
 // dome and a sun in lux, the same sky baked to a PMREM environment, aerial perspective tinted
@@ -142,6 +143,13 @@ export class Stage {
   readonly sunDir = new THREE.Vector3();
   private baker: EnvironmentBaker;
   private ambient: SkyAmbient;
+  readonly resources = new SceneResources();
+  private disposed = false;
+  private pendingSize = true;
+  private cancelCompile: (() => void) | null = null;
+  private cancellation = new Promise<void>((resolve) => {
+    this.cancelCompile = resolve;
+  });
   width = 1;
   height = 1;
 
@@ -280,6 +288,7 @@ export class Stage {
 
   /** Swap the live sky for the baked, path-traced one, and light the scene from it. */
   setSkyPanorama(visible: THREE.Texture, forLight: THREE.Texture, pano: Panorama) {
+    if (this.disposed) return;
     this.sky.setPanorama(visible, pano);
     this.baker.setPanorama(forLight, pano);
     this.scene.environment = this.baker.bake(this.sun, 0, this.ambient);
@@ -315,6 +324,7 @@ export class Stage {
    * CSS pixel, then down to 60 % of that in tenths.
    */
   degrade() {
+    if (this.disposed) return false;
     if (this.ao.enabled) {
       this.ao.enabled = false;
       return true;
@@ -363,6 +373,11 @@ export class Stage {
    * villager first walks into view.
    */
   async precompile(later?: THREE.Object3D) {
+    if (this.disposed) {
+      if (later) this.resources.retire(later);
+      return false;
+    }
+    this.applySize();
     const r = this.renderer;
     // The post passes' own materials too (GTAO, bloom, SMAA, output): they are not in the
     // scene, and linking them at the first frame held it for about two seconds.
@@ -380,34 +395,52 @@ export class Stage {
         if (Array.isArray(value)) value.forEach(add);
         else add(value);
       }
-    const previous = r.getRenderTarget();
-    r.setRenderTarget(this.composer.readBuffer);
-    const jobs = [r.compileAsync(this.scene, this.camera), r.compileAsync(passes, this.camera)];
-    if (later) jobs.push(r.compileAsync(later, this.camera, this.scene));
-    r.setRenderTarget(previous);
-    await Promise.all(jobs);
-    quad.dispose();
-    if (later) this.scene.add(later);
     const culled: THREE.Object3D[] = [];
-    this.scene.traverse((o) => {
-      if (o.frustumCulled) {
-        o.frustumCulled = false;
-        culled.push(o);
+    try {
+      const previous = r.getRenderTarget();
+      const jobs: Promise<unknown>[] = [];
+      try {
+        r.setRenderTarget(this.composer.readBuffer);
+        jobs.push(r.compileAsync(this.scene, this.camera), r.compileAsync(passes, this.camera));
+        if (later) jobs.push(r.compileAsync(later, this.camera, this.scene));
+      } finally {
+        r.setRenderTarget(previous);
       }
-    });
-    this.composer.render();
-    for (const o of culled) o.frustumCulled = true;
-    if (later) {
-      this.scene.remove(later);
-      later.traverse((o) => {
-        (o as THREE.Mesh).geometry?.dispose();
+      const compiled = await Promise.race([
+        Promise.all(jobs).then(() => true),
+        this.cancellation.then(() => false),
+      ]);
+      if (!compiled || this.disposed) return false;
+      if (later) this.scene.add(later);
+      this.scene.traverse((o) => {
+        if (o.frustumCulled) {
+          o.frustumCulled = false;
+          culled.push(o);
+        }
       });
+      this.render();
+      return true;
+    } finally {
+      quad.dispose();
+      for (const object of culled) object.frustumCulled = true;
+      if (later) this.resources.retire(later);
     }
   }
 
   resize(w: number, h: number) {
+    if (this.disposed) return;
     this.width = Math.max(1, w);
     this.height = Math.max(1, h);
+    this.pendingSize = true;
+    this.camera.aspect = this.width / this.height;
+    this.camera.fov = this.camera.aspect < 0.8 ? 58 : 42;
+    this.applyView();
+  }
+
+  /** A resize clears the drawing buffer; apply it immediately before drawing. */
+  private applySize() {
+    if (!this.pendingSize) return;
+    this.pendingSize = false;
     // Within the tier's pixel budget (a high-density screen need not draw every device pixel).
     const budget = Math.sqrt(this.quality.pixelBudget / (this.width * this.height));
     const ratio = Math.min(this.pixelRatio, budget) * this.renderScale;
@@ -415,9 +448,6 @@ export class Stage {
     this.renderer.setSize(this.width, this.height, false);
     this.composer.setPixelRatio(ratio);
     this.composer.setSize(this.width, this.height);
-    this.camera.aspect = this.width / this.height;
-    this.camera.fov = this.camera.aspect < 0.8 ? 58 : 42;
-    this.applyView();
   }
 
   private applyView() {
@@ -429,6 +459,30 @@ export class Stage {
   }
 
   render() {
+    if (this.disposed) return;
+    this.applySize();
     this.composer.render();
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.cancelCompile?.();
+    this.cancelCompile = null;
+    this.resources.tree(this.scene);
+    // These targets are owned by the baker, rather than a loose environment texture.
+    this.scene.environment = this.scene.background = null;
+    this.baker.dispose();
+    for (const pass of this.composer.passes) pass.dispose();
+    // r186 omits these materials from the passes' own dispose methods.
+    this.ao.gtaoMaterial.dispose();
+    this.ao.blendMaterial.dispose();
+    this.bloom.materialHighPassFilter.dispose();
+    this.composer.dispose();
+    this.resources.dispose();
+    this.scene.clear();
+    this.aoHidden = [];
+    this.degradeSteps = [];
+    this.renderer.dispose();
   }
 }

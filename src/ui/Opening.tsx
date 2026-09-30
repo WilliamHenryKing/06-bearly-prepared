@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import type { HudState } from "./store";
 
 // The opening title, over the camera's slow push in across the plateau to the trailhead: the
 // premise in two lines and one button. (The camera then glides down to the bear to pack.)
@@ -9,11 +10,11 @@ export function TitleCard({ onBegin }: { onBegin: () => void }) {
     go.current?.focus({ preventScroll: true });
   }, []);
   return (
-    <div className="pointer-events-auto fixed inset-0 z-20 flex items-end lg:items-center">
+    <div className="title-screen keyboard-scroll pointer-events-auto fixed inset-0 z-20 flex items-end lg:items-center">
       <div className="title-shade pointer-events-none absolute inset-0" />
       <section
         aria-labelledby="title-name"
-        className="relative flex max-w-[36rem] flex-col gap-4 px-6 pb-10 lg:pb-0 lg:pl-16"
+        className="title-copy relative flex max-w-[36rem] flex-col gap-4 px-6 pb-10 lg:pb-0 lg:pl-16"
       >
         <p className="rise text-[11px] font-extrabold uppercase tracking-[0.3em] text-berry">
           A short hike · an absurd load
@@ -50,7 +51,7 @@ const STEPS: { lead: string; more: string; keys: string; touch: string }[] = [
     lead: "Hold Walk to set off.",
     more: "Let go and the bear stops.",
     keys: "W or ↑ walks",
-    touch: "Hold the middle button",
+    touch: "Hold Walk",
   },
   {
     lead: "The stack sways. Lean against it.",
@@ -59,7 +60,7 @@ const STEPS: { lead: string; more: string; keys: string; touch: string }[] = [
     touch: "Hold ◀ or ▶ to lean",
   },
   {
-    lead: "Heavy and low sways least.",
+    lead: "Let go of Walk to steady the load.",
     more: "Stopping steadies the stack. Anything that falls can be fetched back, for a few seconds.",
     keys: "",
     touch: "",
@@ -72,18 +73,62 @@ const STEPS: { lead: string; more: string; keys: string; touch: string }[] = [
   },
 ];
 
-export function Guide({ step, onSkip }: { step: number; onSkip: () => void }) {
-  const s = STEPS[step];
+const coarse = () =>
+  typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+function subscribePointer(listener: () => void) {
+  const media = window.matchMedia("(pointer: coarse)");
+  media.addEventListener("change", listener);
+  return () => media.removeEventListener("change", listener);
+}
+
+export function guideText(step: number, hud?: HudState) {
+  const base = STEPS[step];
+  if (!base) return null;
+  if (step === 1 && hud?.stack.length === 0)
+    return {
+      ...base,
+      lead: "Try leaning left or right.",
+      more: "Your pack is empty. Practice shifting the bear's balance; a packed stack will follow the same lean.",
+    };
+  if (step === 2 && hud?.zone === "lane")
+    return {
+      ...base,
+      lead: "Keep moving on Goose Lane.",
+      more: "The goose chases a bear that stops. Keep walking and counter the sway until the meter settles into green.",
+    };
+  if (step === 2 && hud?.stack.length === 0)
+    return {
+      ...base,
+      more: "Let the bear stop and settle. A low, heavy pack sways less; any spills can be fetched back after landing.",
+    };
+  if (step === 3 && hud?.nextLogDistance === null)
+    return {
+      ...base,
+      lead: "Practice a jump on a clear patch.",
+      more: "The logs are behind you. Tap Jump, let go, and land before trying another; hold Walk when you want to jump forward.",
+    };
+  return base;
+}
+
+export function Guide({ step, onSkip, hud }: { step: number; onSkip: () => void; hud?: HudState }) {
+  const touch = useSyncExternalStore(subscribePointer, coarse, () => false);
+  const reading = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (step >= 0 && reading.current) reading.current.scrollTop = 0;
+  }, [step]);
+  const s = guideText(step, hud);
   if (!s) return null;
-  const touch = window.matchMedia("(pointer: coarse)").matches;
   const how = touch ? s.touch : s.keys;
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-[calc(4.5rem+env(safe-area-inset-top))] flex justify-center px-3 lg:top-auto lg:bottom-6 lg:left-6 lg:justify-start">
+    <div className="hike-guide pointer-events-none">
       <div
-        key={step}
+        ref={reading}
         role="note"
+        aria-label="Trail guide"
         aria-live="polite"
-        className="patch rise pointer-events-auto w-[min(360px,calc(100vw-24px))] px-5 py-4"
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: The bounded guide must support native keyboard scrolling.
+        tabIndex={0}
+        className="guide-card keyboard-scroll patch rise pointer-events-auto px-5 py-4"
       >
         <div className="flex items-center justify-between gap-3">
           <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-ink-soft">
@@ -104,7 +149,7 @@ export function Guide({ step, onSkip }: { step: number; onSkip: () => void }) {
         <button
           type="button"
           onClick={onSkip}
-          className="mt-2 text-xs font-bold text-ink-soft underline"
+          className="guide-skip mt-2 min-h-11 text-xs font-bold text-ink-soft underline"
         >
           Skip the guide
         </button>

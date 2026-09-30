@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import type { SceneResources } from "./resources";
 
 // Visible wind on the ledge: pale streaks race across the path. A few thin ones come with the
 // whistle that warns of a gust, then a dense rush while it pushes, so gusts are seen coming.
@@ -22,6 +23,18 @@ export class WindStreaks {
   });
   private geo = new THREE.PlaneGeometry(1.6, 0.06);
   private spawn = 0;
+
+  clear() {
+    this.spawn = 0;
+    for (const streak of this.pool) streak.mesh.visible = false;
+  }
+
+  dispose(resources: SceneResources) {
+    this.clear();
+    resources.tree(this.group);
+    resources.release(this.mat);
+    resources.release(this.geo);
+  }
 
   /**
    * @param center bear position; @param right unit vector to the walker's right

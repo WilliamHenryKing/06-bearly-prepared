@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { BodyMesh, PlainMesh } from "./bear-body";
+import { loadBody } from "./bear-loader";
 import { ANKLE, BONES, type BoneName, EYE_RADIUS, EYES, MOUTH, SHIN, THIGH } from "./bear-rig";
 import { buildFur, FUR_COLOURS, type FurLayers, furUniforms } from "./fur";
 import { canvasCloth } from "./materials";
@@ -138,28 +139,6 @@ function geometry(m: BodyMesh | PlainMesh) {
   return g;
 }
 
-async function buildMeshes(tier: BearTier) {
-  const v = VOXELS[tier];
-  try {
-    const worker = new Worker(new URL("./bear-body.worker.ts", import.meta.url), {
-      type: "module",
-    });
-    const out = await new Promise<{ base: BodyMesh; shells: BodyMesh; nose: PlainMesh }>(
-      (resolve, reject) => {
-        worker.onmessage = (e) => resolve(e.data);
-        worker.onerror = (e) => reject(e);
-        worker.postMessage(v);
-      },
-    );
-    worker.terminate();
-    return out;
-  } catch {
-    // No module workers: build on the main thread (a short hitch behind the loader).
-    const { buildBody, buildNose } = await import("./bear-body");
-    return { base: buildBody(v.base), shells: buildBody(v.shells), nose: buildNose() };
-  }
-}
-
 /** A sphere's upper cap, for eyelids. */
 const lidGeometry = new THREE.SphereGeometry(EYE_RADIUS * 1.14, 24, 10, 0, TWO_PI, 0, 1.25);
 
@@ -283,8 +262,11 @@ export class Bear {
   private lastHipsY = 0;
   private lastHipsVel = 0;
   private lastYaw = 0;
+  private motionReady = false;
   private target = new THREE.Vector3();
   private inverse = new THREE.Matrix4();
+  private lifetime = new AbortController();
+  private disposed = false;
 
   constructor(private tier: BearTier = "high") {
     const order: THREE.Bone[] = [];
@@ -386,7 +368,8 @@ export class Bear {
   }
 
   private async build() {
-    const meshes = await buildMeshes(this.tier);
+    const meshes = await loadBody(VOXELS[this.tier], this.lifetime.signal);
+    if (this.disposed) return;
     const fur = buildFur(
       geometry(meshes.base),
       geometry(meshes.shells),
@@ -438,6 +421,34 @@ export class Bear {
   }
   private thinning = 1;
   private shakeT = -1;
+
+  /** A replay starts with planted feet and no residual shake or spring impulses. */
+  resetMotion() {
+    this.shakeT = -1;
+    this.earKick = 0;
+    this.v = 0;
+    this.lastU = [0, 0.5];
+    this.phase = 0;
+    for (const spring of [
+      this.bounce,
+      this.bellyJiggle,
+      this.tailSpring,
+      this.headLag.x,
+      this.headLag.y,
+      ...this.earSprings,
+      ...this.armSprings,
+    ])
+      spring.reset();
+    this.lastHipsY = this.lastHipsVel = this.lastYaw = 0;
+    this.motionReady = false;
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.lifetime.abort();
+    this.onFootfall = this.ground = null;
+  }
 
   bump(strength = 1) {
     this.earKick = Math.min(1.4, this.earKick + strength);
@@ -500,12 +511,13 @@ export class Bear {
     hips.rotation.set(pelvisPitch, yaw, roll);
 
     // Vertical motion drives the soft parts: a spring each for the belly, ears and head.
-    const hipsVel = dt > 0 ? (hipsY - this.lastHipsY) / dt : 0;
-    const hipsAcc = dt > 0 ? (hipsVel - this.lastHipsVel) / dt : 0;
+    const hipsVel = dt > 0 && this.motionReady ? (hipsY - this.lastHipsY) / dt : 0;
+    const hipsAcc = dt > 0 && this.motionReady ? (hipsVel - this.lastHipsVel) / dt : 0;
     this.lastHipsY = hipsY;
     this.lastHipsVel = hipsVel;
-    const yawVel = dt > 0 ? (yaw - this.lastYaw) / dt : 0;
+    const yawVel = dt > 0 && this.motionReady ? (yaw - this.lastYaw) / dt : 0;
     this.lastYaw = yaw;
+    this.motionReady = true;
 
     // ---- footfalls -------------------------------------------------------------------------------
     for (let i = 0; i < 2; i++) {

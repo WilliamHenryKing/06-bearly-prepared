@@ -77,6 +77,7 @@ export class Wetness {
     this.frizz = 0;
     this.outFor = 99;
     this.shook = true;
+    this.dripIn = this.wakeIn = 0;
     this.droplets.clear();
     this.apply();
   }

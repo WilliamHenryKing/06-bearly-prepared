@@ -1,64 +1,135 @@
 import type { Input } from "../game/run";
 
-// Keyboard and on-screen buttons feed one input state. Keys: W / ↑ walk, Space jumps,
-// A / ← and D / → lean. On-screen buttons set the same flags while pressed.
+export type InputKey = "walk" | "left" | "right" | "jump";
+type Owner = string | number;
+const CODES: Record<string, InputKey> = {
+  KeyW: "walk",
+  ArrowUp: "walk",
+  KeyA: "left",
+  ArrowLeft: "left",
+  KeyD: "right",
+  ArrowRight: "right",
+  Space: "jump",
+};
 
-const held = { walk: false, left: false, right: false, jump: false };
-const touch = { walk: false, left: false, right: false, jump: false };
+/** Each physical key and held button owns its contribution until that source releases. */
+export function createInputTracker() {
+  const keys = new Set<string>();
+  const pendingKeys = new Set<string>();
+  const pendingTouches = new Set<Owner>();
+  const touches: Record<InputKey, Set<Owner>> = {
+    walk: new Set(),
+    left: new Set(),
+    right: new Set(),
+    jump: new Set(),
+  };
+  const held = (key: InputKey) =>
+    [...keys].some((code) => CODES[code] === key) || touches[key].size > 0;
+  return {
+    keyDown(code: string, repeat = false) {
+      if (!CODES[code] || (repeat && !keys.has(code))) return false;
+      if (CODES[code] === "jump" && !keys.has(code)) pendingKeys.add(code);
+      keys.add(code);
+      return true;
+    },
+    keyUp(code: string) {
+      keys.delete(code);
+    },
+    touch(key: InputKey, down: boolean, owner: Owner = "legacy") {
+      if (down) {
+        if (key === "jump" && !touches[key].has(owner)) pendingTouches.add(owner);
+        touches[key].add(owner);
+      } else touches[key].delete(owner);
+    },
+    cancelTouch(key: InputKey, owner: Owner = "legacy") {
+      touches[key].delete(owner);
+      if (key === "jump") pendingTouches.delete(owner);
+    },
+    read(consumeJump = true): Input {
+      const jump = held("jump") || pendingKeys.size > 0 || pendingTouches.size > 0;
+      if (consumeJump) {
+        pendingKeys.clear();
+        pendingTouches.clear();
+      }
+      return {
+        walk: held("walk"),
+        lean: Number(held("right")) - Number(held("left")),
+        jump,
+      };
+    },
+    clear() {
+      keys.clear();
+      pendingKeys.clear();
+      pendingTouches.clear();
+      for (const owners of Object.values(touches)) owners.clear();
+    },
+  };
+}
 
-const WALK = new Set(["KeyW", "ArrowUp"]);
-const JUMP = new Set(["Space"]);
-const LEFT = new Set(["KeyA", "ArrowLeft"]);
-const RIGHT = new Set(["KeyD", "ArrowRight"]);
+const tracker = createInputTracker();
+const resets = new Set<() => void>();
 
-function setKey(code: string, down: boolean, target: EventTarget | null) {
-  // Let Space and arrows keep their meaning on focused buttons and inputs.
-  const el = target as HTMLElement | null;
-  const onControl =
-    !!el && /^(BUTTON|INPUT|SELECT|TEXTAREA|A)$/.test(el.tagName) && !el.dataset.gameKey;
-  if (onControl && down && (code === "Space" || code.startsWith("Arrow"))) return false;
-  if (WALK.has(code)) held.walk = down;
-  else if (JUMP.has(code)) held.jump = down;
-  else if (LEFT.has(code)) held.left = down;
-  else if (RIGHT.has(code)) held.right = down;
-  else return false;
-  return true;
+const element = (target: EventTarget | null) =>
+  typeof HTMLElement !== "undefined" && target instanceof HTMLElement ? target : null;
+
+export function isEditingTarget(target: EventTarget | null): boolean {
+  const el = element(target);
+  return (
+    !!el &&
+    (el.isContentEditable ||
+      !!el.closest("input,textarea,select,[contenteditable]:not([contenteditable=false])"))
+  );
 }
 
 export function bindKeyboard(active: () => boolean) {
   const down = (e: KeyboardEvent) => {
-    if (!active()) return;
-    if (setKey(e.code, true, e.target)) e.preventDefault();
+    if (e.defaultPrevented || e.ctrlKey || e.altKey || e.metaKey || isEditingTarget(e.target))
+      return;
+    const el = element(e.target);
+    const control = el?.closest("button,a,input,select,textarea");
+    const nativeActivation = e.code === "Space" || e.code === "Enter" || e.code === "NumpadEnter";
+    if (control && nativeActivation) {
+      if (e.repeat) e.preventDefault();
+      return;
+    }
+    if (!active() || document.hidden) return;
+    if (
+      e.code.startsWith("Arrow") &&
+      (el?.closest(".keyboard-scroll") || (control && !control.hasAttribute("data-game-key")))
+    )
+      return;
+    if (e.code === "Space" && el?.closest(".keyboard-scroll")) return;
+    if (tracker.keyDown(e.code, e.repeat)) e.preventDefault();
   };
-  const up = (e: KeyboardEvent) => {
-    setKey(e.code, false, null);
+  const up = (e: KeyboardEvent) => tracker.keyUp(e.code);
+  const hidden = () => {
+    if (document.hidden) releaseAll();
   };
-  const blur = () => releaseAll();
   window.addEventListener("keydown", down);
   window.addEventListener("keyup", up);
-  window.addEventListener("blur", blur);
+  window.addEventListener("blur", releaseAll);
+  document.addEventListener("visibilitychange", hidden);
   return () => {
     window.removeEventListener("keydown", down);
     window.removeEventListener("keyup", up);
-    window.removeEventListener("blur", blur);
+    window.removeEventListener("blur", releaseAll);
+    document.removeEventListener("visibilitychange", hidden);
+    releaseAll();
   };
 }
 
-export function setTouch(key: keyof typeof touch, down: boolean) {
-  touch[key] = down;
-}
-
-export function readInput(): Input {
-  const left = held.left || touch.left;
-  const right = held.right || touch.right;
-  return {
-    walk: held.walk || touch.walk,
-    lean: (right ? 1 : 0) - (left ? 1 : 0),
-    jump: held.jump || touch.jump,
+export const setTouch = (key: InputKey, down: boolean, owner?: Owner) =>
+  tracker.touch(key, down, owner);
+export const cancelTouch = (key: InputKey, owner?: Owner) => tracker.cancelTouch(key, owner);
+/** Peek while no fixed step is due, so a quick tap survives until it can be simulated. */
+export const readInput = (consumeJump = true) => tracker.read(consumeJump);
+export function onInputReset(listener: () => void) {
+  resets.add(listener);
+  return () => {
+    resets.delete(listener);
   };
 }
-
 export function releaseAll() {
-  held.walk = held.left = held.right = held.jump = false;
-  touch.walk = touch.left = touch.right = touch.jump = false;
+  tracker.clear();
+  for (const reset of resets) reset();
 }

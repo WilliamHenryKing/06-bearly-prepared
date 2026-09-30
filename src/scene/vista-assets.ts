@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import type { SceneAssets } from "./assets";
 import type { HeightGrid } from "./land";
 
 // The baked vista (tools/bake → public/vista/): eroded heights, the land's light, the trees that
@@ -60,8 +61,8 @@ export interface VistaAssets {
 const BASE = `${import.meta.env.BASE_URL}vista/`;
 
 /** Fetch a gzip file and inflate it (unless the server already did). */
-async function inflate(url: string): Promise<ArrayBuffer> {
-  const res = await fetch(url);
+async function inflate(url: string, assets?: SceneAssets): Promise<ArrayBuffer> {
+  const res = await fetch(url, { signal: assets?.signal });
   if (!res.ok) throw new Error(`${url}: ${res.status}`);
   const buf = await res.arrayBuffer();
   const head = new Uint8Array(buf, 0, 2);
@@ -70,9 +71,13 @@ async function inflate(url: string): Promise<ArrayBuffer> {
   return new Response(stream).arrayBuffer();
 }
 
-async function heights(name: string, g: VistaInfo["grids"]["inner"]): Promise<HeightGrid> {
+async function heights(
+  name: string,
+  g: VistaInfo["grids"]["inner"],
+  assets?: SceneAssets,
+): Promise<HeightGrid> {
   const { n, offset, scale } = g.height;
-  const deltas = new Uint16Array(await inflate(`${BASE}${name}-h.bin.gz`));
+  const deltas = new Uint16Array(await inflate(`${BASE}${name}-h.bin.gz`, assets));
   const data = new Float32Array(n * n);
   for (let j = 0; j < n; j++) {
     let q = 0;
@@ -84,8 +89,16 @@ async function heights(name: string, g: VistaInfo["grids"]["inner"]): Promise<He
   return { x0: g.x0, z0: g.z0, size: g.size, n, data };
 }
 
-function texture(loader: THREE.TextureLoader, file: string, srgb: boolean, mips = true) {
-  return loader.loadAsync(`${BASE}${file}`).then((t) => {
+function texture(
+  loader: THREE.TextureLoader,
+  file: string,
+  srgb: boolean,
+  mips = true,
+  assets?: SceneAssets,
+) {
+  const job = loader.loadAsync(`${BASE}${file}`).then((t) => {
+    assets?.resources.retain(t);
+    assets?.assertAlive();
     t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
     t.generateMipmaps = mips;
     t.minFilter = mips ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
@@ -94,10 +107,11 @@ function texture(loader: THREE.TextureLoader, file: string, srgb: boolean, mips 
     t.wrapT = THREE.ClampToEdgeWrapping;
     return t;
   });
+  return assets ? assets.wait(job) : job;
 }
 
-async function forest(info: VistaInfo): Promise<Forest> {
-  const buf = await inflate(`${BASE}forest.bin.gz`);
+async function forest(info: VistaInfo, assets?: SceneAssets): Promise<Forest> {
+  const buf = await inflate(`${BASE}forest.bin.gz`, assets);
   const count = info.forest.count;
   const view = new DataView(buf);
   const f: Forest = {
@@ -121,21 +135,28 @@ async function forest(info: VistaInfo): Promise<Forest> {
   return f;
 }
 
-export async function loadVista(mobile: boolean, anisotropy: number): Promise<VistaAssets> {
-  const info = (await (await fetch(`${BASE}vista.json`)).json()) as VistaInfo;
+export async function loadVista(
+  mobile: boolean,
+  anisotropy: number,
+  assets?: SceneAssets,
+): Promise<VistaAssets> {
+  const res = await fetch(`${BASE}vista.json`, { signal: assets?.signal });
+  if (!res.ok) throw new Error(`vista.json: ${res.status}`);
+  const info = (await res.json()) as VistaInfo;
+  assets?.assertAlive();
   const loader = new THREE.TextureLoader();
   const lo = mobile ? "-lo" : "";
   const [inner, outer, innerLight, outerLight, innerMat, lakeMask, sky, skyEnv, trees] =
     await Promise.all([
-      heights("inner", info.grids.inner),
-      heights("outer", info.grids.outer),
-      texture(loader, `inner-light${lo}.webp`, true),
-      texture(loader, `outer-light${lo}.webp`, true),
-      texture(loader, "inner-mat.webp", false),
-      texture(loader, "lake.webp", false, false),
-      texture(loader, `sky${lo}.webp`, true, false),
-      texture(loader, "sky-lo.webp", true),
-      forest(info),
+      heights("inner", info.grids.inner, assets),
+      heights("outer", info.grids.outer, assets),
+      texture(loader, `inner-light${lo}.webp`, true, true, assets),
+      texture(loader, `outer-light${lo}.webp`, true, true, assets),
+      texture(loader, "inner-mat.webp", false, true, assets),
+      texture(loader, "lake.webp", false, false, assets),
+      texture(loader, `sky${lo}.webp`, true, false, assets),
+      texture(loader, "sky-lo.webp", true, true, assets),
+      forest(info, assets),
     ]);
   for (const t of [innerLight, outerLight, innerMat]) t.anisotropy = anisotropy;
   // The sky wraps around: repeat across the seam at north-east so filtering is seamless.

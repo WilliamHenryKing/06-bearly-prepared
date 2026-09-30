@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import { ITEM_ORDER, type ItemId, item } from "../game/items";
 import type { LoadStats } from "../game/load";
 import { MAX_STACK } from "../game/run";
@@ -19,10 +20,42 @@ const WOBBLE_WORDS = ["Steady", "Jaunty", "Wobbly", "Precarious", "Magnificently
 export function PackPanel({ packed, stats, onToggle, onMove, onStart }: Props) {
   const word = WOBBLE_WORDS[Math.min(4, Math.floor(stats.wobble * 5))];
   const topHeavy = packed.length > 1 && stats.comHeight > 0.5 + stats.height * 0.55;
+  const panel = useRef<HTMLElement>(null);
+  const moving = useRef<{ id: ItemId; dir: 1 | -1 } | null>(null);
+  const [announcement, announce] = useState("");
+  useLayoutEffect(() => {
+    const requested = moving.current;
+    if (!requested) return;
+    moving.current = null;
+    const controls = panel.current?.querySelectorAll<HTMLButtonElement>(
+      `[data-stack-item="${requested.id}"]`,
+    );
+    const next =
+      controls &&
+      [...controls].find(
+        (button) => button.dataset.direction === String(requested.dir) && !button.disabled,
+      );
+    const fallback = controls && [...controls].find((button) => !button.disabled);
+    const target =
+      next ??
+      fallback ??
+      panel.current?.querySelector<HTMLButtonElement>(`[data-kit-item="${requested.id}"]`);
+    target?.focus({ preventScroll: true });
+    target?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    announce(
+      `${item(requested.id).name} is now ${packed.indexOf(requested.id) + 1} of ${packed.length}, counted from the bottom.`,
+    );
+  }, [packed]);
+  const move = (id: ItemId, index: number, dir: 1 | -1) => {
+    moving.current = { id, dir };
+    onMove(index, dir);
+  };
   return (
     <section
+      ref={panel}
       aria-labelledby="pack-title"
-      className="patch rise pointer-events-auto absolute inset-x-3 bottom-3 max-h-[52vh] overflow-y-auto p-4 sm:p-5 lg:inset-x-auto lg:top-4 lg:right-4 lg:bottom-4 lg:max-h-none lg:w-[380px]"
+      tabIndex={-1}
+      className="pack-panel keyboard-scroll patch rise pointer-events-auto absolute inset-x-3 bottom-3 max-h-[52vh] overflow-y-auto p-4 sm:p-5 lg:inset-x-auto lg:top-4 lg:right-4 lg:bottom-4 lg:max-h-none lg:w-[380px]"
     >
       <h1 id="pack-title" className="text-xl font-black tracking-tight sm:text-2xl">
         Bearly Prepared
@@ -43,6 +76,9 @@ export function PackPanel({ packed, stats, onToggle, onMove, onStart }: Props) {
             <li key={id}>
               <button
                 type="button"
+                data-kit-item={id}
+                aria-label={def.name}
+                aria-describedby={`kit-${id}-stats`}
                 aria-pressed={on}
                 disabled={!on && packed.length >= MAX_STACK}
                 onClick={() => onToggle(id)}
@@ -54,7 +90,7 @@ export function PackPanel({ packed, stats, onToggle, onMove, onStart }: Props) {
               >
                 <ItemIcon id={id} />
                 <span className="mt-1 leading-tight">{def.name}</span>
-                <span className="font-semibold text-[10px] text-ink-soft">
+                <span id={`kit-${id}-stats`} className="font-semibold text-[10px] text-ink-soft">
                   {def.weight} kg · {Math.round(def.height * 100)} cm
                 </span>
               </button>
@@ -82,19 +118,23 @@ export function PackPanel({ packed, stats, onToggle, onMove, onStart }: Props) {
                 <span className="hidden text-[11px] text-ink-soft sm:inline">{item(id).blurb}</span>
                 <button
                   type="button"
+                  data-stack-item={id}
+                  data-direction="1"
                   aria-label={`Move ${name} up`}
                   disabled={i === packed.length - 1}
-                  onClick={() => onMove(i, 1)}
-                  className="h-8 w-8 rounded-lg font-black hover:bg-paper disabled:opacity-30"
+                  onClick={() => move(id, i, 1)}
+                  className="pack-reorder h-11 w-11 shrink-0 rounded-lg font-black hover:bg-paper disabled:opacity-30"
                 >
                   ▲
                 </button>
                 <button
                   type="button"
+                  data-stack-item={id}
+                  data-direction="-1"
                   aria-label={`Move ${name} down`}
                   disabled={i === 0}
-                  onClick={() => onMove(i, -1)}
-                  className="h-8 w-8 rounded-lg font-black hover:bg-paper disabled:opacity-30"
+                  onClick={() => move(id, i, -1)}
+                  className="pack-reorder h-11 w-11 shrink-0 rounded-lg font-black hover:bg-paper disabled:opacity-30"
                 >
                   ▼
                 </button>
@@ -103,6 +143,9 @@ export function PackPanel({ packed, stats, onToggle, onMove, onStart }: Props) {
           })}
         </ol>
       )}
+      <p className="sr-only" role="status" aria-live="polite">
+        {announcement}
+      </p>
 
       <div className="mt-4 rounded-2xl bg-paper-2 p-3" aria-live="polite">
         <div className="flex items-baseline justify-between text-sm font-bold">

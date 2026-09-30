@@ -1,5 +1,6 @@
-import { useSyncExternalStore } from "react";
+import { useLayoutEffect, useSyncExternalStore } from "react";
 import type { ItemId } from "../game/items";
+import { focusHikeControl, focusPacking } from "./focus";
 import { Hud } from "./Hud";
 import { MuteButton } from "./MuteButton";
 import { Guide, GuideButton, TitleCard } from "./Opening";
@@ -20,9 +21,21 @@ export interface Actions {
 
 export function App({ actions }: { actions: Actions }) {
   const hud = useSyncExternalStore(store.subscribe, store.get);
+  const opening = hud?.opening;
+  const phase = hud?.phase;
+  useLayoutEffect(() => {
+    if (opening !== "done") return;
+    if (phase === "packing") focusPacking();
+    else if (phase === "hiking") focusHikeControl();
+  }, [opening, phase]);
   if (!hud) return null;
   return (
-    <main className="pointer-events-none fixed inset-0 select-none" aria-label="Bearly Prepared">
+    <main
+      className="bear-ui pointer-events-none fixed inset-0 select-none"
+      aria-label="Bearly Prepared"
+      data-phase={hud.phase}
+      data-opening={hud.opening}
+    >
       {hud.opening === "title" && <TitleCard onBegin={actions.begin} />}
       {hud.phase === "packing" && hud.opening === "done" && (
         <PackPanel
@@ -33,11 +46,32 @@ export function App({ actions }: { actions: Actions }) {
           onStart={actions.start}
         />
       )}
-      {hud.phase === "hiking" && <Hud hud={hud} onFetch={actions.fetch} />}
-      {hud.phase === "hiking" && hud.guide >= 0 && (
-        <Guide step={hud.guide} onSkip={actions.skipGuide} />
+      {hud.phase === "hiking" && (
+        <Hud
+          hud={hud}
+          onFetch={actions.fetch}
+          guide={
+            hud.guide >= 0 ? (
+              <Guide
+                step={hud.guide}
+                hud={hud}
+                onSkip={() => {
+                  actions.skipGuide();
+                  focusHikeControl();
+                }}
+              />
+            ) : null
+          }
+        />
       )}
-      {hud.phase === "hiking" && <GuideButton onClick={actions.showGuide} />}
+      {hud.phase === "hiking" && (
+        <GuideButton
+          onClick={() => {
+            actions.showGuide();
+            focusHikeControl();
+          }}
+        />
+      )}
       {hud.phase === "tea" && hud.outcome && (
         <TeaCard
           outcome={hud.outcome}
@@ -46,7 +80,7 @@ export function App({ actions }: { actions: Actions }) {
           onReplay={actions.replay}
         />
       )}
-      <MuteButton />
+      {hud.opening === "done" && hud.phase !== "tea" && <MuteButton />}
     </main>
   );
 }

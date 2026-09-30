@@ -14,6 +14,7 @@ import {
   samplePath,
   TRAIL_LENGTH,
 } from "../game/trail";
+import { aborted, SceneAssets } from "./assets";
 import { batchStatic } from "./batch";
 import { Bear, restPose } from "./bear";
 import { type Bookmark, bookmarkCamera } from "./bookmarks";
@@ -23,9 +24,9 @@ import { buildDressing } from "./dressing";
 import { furUniforms } from "./fur";
 import { setBakedLand } from "./land";
 import { Landmarks } from "./landmarks";
-import { PALETTE, provideDetail } from "./materials";
+import { PALETTE, provideDetail, sharedTextures } from "./materials";
 import { Pond } from "./pond";
-import { buildProp, cup, plate, spreadBlanket, stove } from "./props";
+import { buildProp, cup, plate, propMaterials, spreadBlanket, stove } from "./props";
 import type { QualityTier } from "./quality";
 import { Spills } from "./spills";
 import { Stage } from "./stage";
@@ -55,7 +56,10 @@ export class GameScene {
   private bear: Bear;
   private rig: CameraRig;
   private spills: Spills;
-  private tea = new TeaScene();
+  private tea: TeaScene;
+  private assets: SceneAssets;
+  private disposed = false;
+  private grass: THREE.InstancedMesh[] = [];
   private flags: THREE.Mesh[];
   private stackMeshes = new Map<ItemId, THREE.Group>();
   private pose = restPose();
@@ -89,7 +93,6 @@ export class GameScene {
   title = false;
   /** The scene is drawn once its shaders are compiled (behind the arrival veil until then). */
   private warmed = false;
-  private readonly born = performance.now();
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -98,7 +101,12 @@ export class GameScene {
     quality?: QualityTier,
   ) {
     this.stage = new Stage(canvas, mobile, quality);
+    this.assets = new SceneAssets(this.stage.resources);
+    for (const material of propMaterials) this.stage.resources.retain(material);
+    for (const texture of sharedTextures) this.stage.resources.retain(texture);
+    this.tea = new TeaScene(this.stage.resources);
     this.bear = new Bear(mobile ? "low" : "high");
+    void this.bear.ready.catch(() => {});
     this.path = samplePath();
     this.pond = new Pond(this.path);
     this.ground = new Ground(this.path, this.pond);
@@ -113,16 +121,18 @@ export class GameScene {
       this.footfallHandler?.(side, strength, splash);
     };
     const { scene } = this.stage;
-    this.ready = this.load(mobile);
     const dressing = buildDressing(this.path);
     scene.add(dressing.group);
     this.flags = dressing.flags;
-    this.spills = new Spills(this.ground);
+    this.spills = new Spills(this.ground, this.stage.resources);
+    this.spills.setCalm(calm);
     scene.add(this.spills.group, this.bear.root, this.tea.group);
     scene.add(this.pond.mesh, this.wetness.droplets.mesh);
-    this.crowd = new Crowd(this.path, (x, z) => this.ground.height(x, z), calm);
+    this.crowd = new Crowd(this.path, (x, z) => this.ground.height(x, z), calm, this.assets);
+    void this.crowd.ready.catch(() => {});
     scene.add(this.crowd.group);
-    this.village = new Village(this.path, (x, z) => this.ground.height(x, z));
+    this.village = new Village(this.path, (x, z) => this.ground.height(x, z), this.assets);
+    void this.village.ready.catch(() => {});
     scene.add(this.village.group);
     this.landmarks = new Landmarks(this.path);
     scene.add(this.landmarks.group, this.streaks.group);
@@ -135,6 +145,8 @@ export class GameScene {
     this.rig = new CameraRig(this.stage.camera, this.path);
     this.rig.reduced = calm;
     windUniforms.uSway.value = calm ? 0.25 : 1;
+    this.stage.resources.tree(scene);
+    this.ready = this.assets.wait(this.load(mobile));
   }
 
   /** Resolves once the textured ground and trail are in the scene. */
@@ -144,7 +156,8 @@ export class GameScene {
     const anisotropy = Math.min(8, this.stage.renderer.capabilities.getMaxAnisotropy());
     setAnisotropy(anisotropy);
     // The baked mountains and sky first: every height asked for from here on is the baked land.
-    const vista = await loadVista(mobile, anisotropy).catch((e) => {
+    const vista = await loadVista(mobile, anisotropy, this.assets).catch((e) => {
+      this.assets.assertAlive();
       console.warn("vista bake unavailable; using the analytic land", e);
       return null;
     });
@@ -153,16 +166,20 @@ export class GameScene {
       this.stage.setSkyPanorama(vista.sky, vista.skyEnv, vista.info.sky);
     }
     const [turf, dirt, rock, wool, planks, hessian, barkSet] = await Promise.all([
-      loadPbrSet("grass_ground"),
-      loadPbrSet("rocky_trail"),
-      loadPbrSet("rock_face_03"),
-      loadPbrSet("wool_boucle"),
-      loadPbrSet("distressed_painted_planks"),
-      loadPbrSet("hessian_230"),
-      loadPbrSet("bark_brown_02"),
+      loadPbrSet("grass_ground", this.assets),
+      loadPbrSet("rocky_trail", this.assets),
+      loadPbrSet("rock_face_03", this.assets),
+      loadPbrSet("wool_boucle", this.assets),
+      loadPbrSet("distressed_painted_planks", this.assets),
+      loadPbrSet("hessian_230", this.assets),
+      loadPbrSet("bark_brown_02", this.assets),
     ]);
+    this.assets.assertAlive();
     provideDetail({ felt: wool, wood: planks, cloth: hessian, bark: barkSet });
     const ground = createGroundMaterial({ turf, dirt, rock });
+    this.stage.resources.material(ground);
+    const vegetation = await buildVegetation(this.ground, this.path, mobile, this.assets);
+    this.assets.assertAlive();
     this.stage.scene.add(
       buildTerrain(
         this.ground,
@@ -173,8 +190,11 @@ export class GameScene {
       ),
       buildTrail(this.path, TRAIL_LENGTH, dirt, this.ground),
       this.pond.buildPatch((x, z) => this.ground.height(x, z), ground),
-      await buildVegetation(this.ground, this.path, mobile),
+      vegetation,
     );
+    const plants = new Set<THREE.Object3D>();
+    vegetation.traverse((plant) => plants.add(plant));
+    this.grass = thinGrass.filter((grass) => plants.has(grass));
     this.vista = new Vista(
       this.stage.renderer,
       this.stage.sunDir,
@@ -184,7 +204,9 @@ export class GameScene {
     );
     this.stage.scene.add(this.vista.group);
     this.stage.aoHidden.push(this.vista.birds.mesh, this.vista.land);
-    await Promise.all([this.bear.ready, this.crowd.ready]);
+    await Promise.all([this.bear.ready, this.crowd.ready, this.village.ready]);
+    this.assets.assertAlive();
+    this.stage.resources.tree(this.stage.scene);
     // The fur is too fine for GTAO's G-buffer; the inflated proxy stands in for it there.
     this.stage.aoHidden.push(...this.bear.furMeshes);
     this.stage.degradeSteps.push(() => this.bear.thinFur());
@@ -193,7 +215,7 @@ export class GameScene {
     this.stage.degradeSteps.push(() => {
       if (thinned) return false;
       thinned = true;
-      for (const m of thinGrass) m.count = Math.floor(m.count / 2);
+      for (const m of this.grass) m.count = Math.floor(m.count / 2);
       return true;
     });
     // Every shader, compiled before the first full frame; the load's props and the tea things
@@ -202,7 +224,9 @@ export class GameScene {
     for (const id of ["kettle", "teacups", "biscuits", "blanket", "chair", "lamp"] as ItemId[])
       later.add(buildProp(id));
     later.add(spreadBlanket(), plate(true), plate(false), cup(), stove());
-    await this.stage.precompile(later);
+    this.stage.resources.tree(later);
+    if (!(await this.stage.precompile(later))) throw aborted();
+    this.assets.assertAlive();
     this.warmed = true;
   }
 
@@ -221,6 +245,9 @@ export class GameScene {
 
   /** Back to the trailhead for a new run. */
   reset() {
+    if (this.disposed) return;
+    for (const mesh of this.stackMeshes.values()) this.retireProp(mesh);
+    this.stackMeshes.clear();
     this.spills.clear();
     this.tea.clear();
     this.wetness.reset();
@@ -228,17 +255,29 @@ export class GameScene {
     this.flop = null;
     this.air = 0;
     this.village.reset();
+    this.crowd.reset();
+    this.bear.resetMotion();
+    this.pond.reset();
+    this.streaks.clear();
+    this.clock = this.hush = this.lastD = 0;
+    this.stage.hush(0);
+    this.vista?.hush(0);
     this.teaTime = -1;
     this.silence = false;
     this.pose = restPose();
     this.react = 0;
     this.fetchT = -1;
     this.bear.load.visible = true;
-    for (const f of this.flags) (f.material as THREE.MeshStandardMaterial).color.set(0x8a8070);
+    for (const f of this.flags) {
+      gsap.killTweensOf(f.scale);
+      f.scale.y = 1;
+      (f.material as THREE.MeshStandardMaterial).color.set(0x8a8070);
+    }
     this.rig.snap();
   }
 
   handle(events: RunEvent[], s: RunState) {
+    if (this.disposed) return;
     for (const e of events) {
       if (e.type === "drop") {
         const mesh = this.stackMeshes.get(e.id);
@@ -252,7 +291,7 @@ export class GameScene {
         const top = this.bear.load.localToWorld(new THREE.Vector3(0, PACK_TOP + s.stats.height, 0));
         this.spills.take(e.id, top);
         this.bear.bump(1);
-        this.fetchT = 0;
+        this.fetchT = this.calm ? -1 : 0;
       } else if (e.type === "topple") {
         this.flop = { t: 0, fromD: this.lastD, side: e.side, forward: false };
         const p = pointAt(this.path, this.lastD);
@@ -311,6 +350,8 @@ export class GameScene {
         const i = CHECKPOINTS.indexOf(e.at) - 1;
         const flag = this.flags[i];
         if (flag) {
+          gsap.killTweensOf(flag.scale);
+          flag.scale.y = 1;
           (flag.material as THREE.MeshStandardMaterial).color.set(PALETTE.mustard);
           if (!this.calm)
             gsap.fromTo(
@@ -329,11 +370,12 @@ export class GameScene {
 
   /** Lays out the tea; returns when each piece appears. */
   arrive(outcome: TeaOutcome) {
+    if (this.disposed) return [];
     this.seat = this.tea.build(outcome, this.calm);
     this.silence = outcome.silence;
     this.teaTime = 0;
     this.bear.load.visible = false;
-    for (const m of this.stackMeshes.values()) this.bear.load.remove(m);
+    for (const m of this.stackMeshes.values()) this.retireProp(m);
     this.stackMeshes.clear();
     return this.tea.pops;
   }
@@ -367,7 +409,7 @@ export class GameScene {
     }
     for (const [id, mesh] of this.stackMeshes) {
       if (!s.stack.includes(id)) {
-        this.bear.load.remove(mesh);
+        this.retireProp(mesh);
         this.stackMeshes.delete(id);
       }
     }
@@ -376,6 +418,7 @@ export class GameScene {
       let mesh = this.stackMeshes.get(entry.id);
       if (!mesh) {
         mesh = buildProp(entry.id);
+        this.stage.resources.tree(mesh);
         this.stackMeshes.set(entry.id, mesh);
         this.bear.load.add(mesh);
         if (!this.calm)
@@ -398,6 +441,8 @@ export class GameScene {
   }
 
   frame(s: RunState, dt: number) {
+    if (this.disposed) return;
+    if (this.calm) this.flop = null;
     this.clock += dt;
     // While the bear lies face down after a trip, its load is scattered on the trail.
     const sprawled = this.flop?.forward && this.flop.t < TRIP_DOWN;
@@ -503,7 +548,7 @@ export class GameScene {
     this.bear.update(pose, dt, this.calm);
 
     // Wind: the grass leans with every gust along the ledge and shivers before it arrives.
-    windUniforms.uTime.value += dt;
+    if (!this.calm) windUniforms.uTime.value += dt;
     const onLedge = s.d >= LEDGE.from && s.d < LEDGE.to && s.phase === "hiking";
     const g = onLedge ? gustAt(s.gustClock) : { dir: 0, strength: 0, warning: false };
     const push =
@@ -512,7 +557,7 @@ export class GameScene {
     const w = windUniforms.uWind.value;
     w.set(w.x + (r.x - w.x) * Math.min(1, dt * 6), w.y + (r.z - w.y) * Math.min(1, dt * 6));
     // The same wind combs the bear's fur, with a light breeze that never quite stops.
-    furUniforms.uTime.value += dt;
+    if (!this.calm) furUniforms.uTime.value += dt;
     const breeze = this.calm
       ? 0
       : Math.sin(this.clock * 1.7) * 0.06 + Math.sin(this.clock * 4.3) * 0.03;
@@ -520,17 +565,11 @@ export class GameScene {
 
     const right = this.rightAt(s.d);
     const rate = onLedge ? (g.warning ? 5 : 1.5) + g.strength * 40 : 0;
-    this.streaks.update(
-      dt,
-      this.bear.root.position,
-      right,
-      g.dir || 1,
-      this.calm ? rate * 0.3 : rate,
-    );
+    this.streaks.update(dt, this.bear.root.position, right, g.dir || 1, this.calm ? 0 : rate);
     this.landmarks.update(g.dir * (0.15 + g.strength), this.clock, this.calm);
     this.spills.update(dt);
-    this.pond.update(dt);
-    this.vista?.update(dt);
+    this.pond.update(this.calm ? 0 : dt);
+    this.vista?.update(this.calm ? 0 : dt);
     this.crowd.update(s.time, dt);
     this.village.update(s.goose, dt, this.calm);
     this.wetness.update(dt, pose.speed, onLedge && g.strength > 0.2);
@@ -543,9 +582,61 @@ export class GameScene {
       this.stage.camera.lookAt(cam.look);
     } else this.rig.update(mode, d, s.phase === "tea" ? 0 : s.stats.height, dt, still);
     this.stage.follow(this.bear.root.position);
-    // Until the shaders are compiled the arrival veil hides the canvas (its safety reveal comes
-    // at 30 s, and from then on the scene is drawn regardless).
-    if (this.warmed || performance.now() - this.born > 29500) this.stage.render();
+    // The veil remains until the true compiled first frame; elapsed time is not readiness.
+    if (this.warmed) this.stage.render();
     this.lastD = s.d;
+  }
+
+  private retireProp(prop: THREE.Object3D) {
+    gsap.killTweensOf(prop.scale);
+    this.stage.resources.retire(prop);
+  }
+
+  setViewAspect(aspect: number | null) {
+    this.rig.viewAspect = aspect;
+  }
+
+  setCalm(calm: boolean) {
+    if (this.disposed || calm === this.calm) return;
+    this.calm = calm;
+    this.rig.setCalm(calm);
+    this.crowd.setCalm(calm);
+    this.spills.setCalm(calm);
+    this.tea.setCalm(calm);
+    windUniforms.uSway.value = calm ? 0.25 : 1;
+    if (!calm) return;
+    for (const mesh of this.stackMeshes.values()) {
+      gsap.killTweensOf(mesh.scale);
+      mesh.scale.setScalar(1);
+    }
+    for (const flag of this.flags) {
+      gsap.killTweensOf(flag.scale);
+      flag.scale.y = 1;
+    }
+    this.flop = null;
+    this.fetchT = -1;
+    this.bear.resetMotion();
+    this.streaks.clear();
+    if (this.teaTime >= 0) this.teaTime = Math.max(this.teaTime, 8);
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.assets.dispose();
+    this.bear.dispose();
+    this.crowd.dispose();
+    this.spills.dispose();
+    this.tea.clear();
+    for (const mesh of this.stackMeshes.values()) this.retireProp(mesh);
+    this.stackMeshes.clear();
+    for (const flag of this.flags) gsap.killTweensOf(flag.scale);
+    this.footfallHandler = this.wetness.onShake = null;
+    for (const grass of this.grass) {
+      const index = thinGrass.indexOf(grass);
+      if (index >= 0) thinGrass.splice(index, 1);
+    }
+    this.streaks.dispose(this.stage.resources);
+    this.stage.dispose();
   }
 }

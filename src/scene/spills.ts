@@ -1,5 +1,7 @@
+import gsap from "gsap";
 import * as THREE from "three";
 import type { ItemId } from "../game/items";
+import { SceneResources } from "./resources";
 import type { Ground } from "./terrain";
 
 // Items that slid off: they tumble in an arc, squash and bounce in the grass, skid to a stop
@@ -42,14 +44,24 @@ export class Spills {
     roughness: 0.5,
   });
   private time = 0;
+  private calm = false;
 
   /** Called when a spilled item first hits the ground. */
   onLand: (id: ItemId) => void = () => {};
 
-  constructor(private ground: Ground) {}
+  constructor(
+    private ground: Ground,
+    private resources = new SceneResources(),
+  ) {
+    for (const resource of [this.puffGeo, this.puffMat, this.markerGeo, this.markerMat])
+      this.resources.retain(resource);
+  }
 
   /** Detach an item from the stack (keeping its world transform) and throw it sideways. */
   drop(id: ItemId, obj: THREE.Object3D, side: THREE.Vector3, calm: boolean) {
+    gsap.killTweensOf(obj.scale);
+    obj.scale.setScalar(1);
+    this.resources.tree(obj);
     this.group.attach(obj);
     const vel = side
       .clone()
@@ -63,7 +75,7 @@ export class Spills {
     const marker = new THREE.Mesh(this.markerGeo, this.markerMat);
     marker.visible = false;
     this.group.add(marker);
-    this.items.push({
+    const spill: Spill = {
       id,
       obj,
       vel,
@@ -75,16 +87,18 @@ export class Spills {
       settle: null,
       from: new THREE.Vector3(),
       marker,
-    });
+    };
+    this.items.push(spill);
+    if (calm) this.settle(spill);
   }
 
   /** A fetched item hops back up toward `to` (the top of the stack) and vanishes into it. */
   take(id: ItemId, to?: THREE.Vector3) {
     const f = this.items.find((x) => x.id === id && x.phase !== "return");
     if (!f) return;
-    this.puff(f.obj.position);
+    if (!this.calm) this.puff(f.obj.position);
     this.group.remove(f.marker);
-    if (!to) {
+    if (!to || this.calm) {
       this.remove(f);
       return;
     }
@@ -97,25 +111,61 @@ export class Spills {
   private remove(f: Spill) {
     this.group.remove(f.obj, f.marker);
     this.items.splice(this.items.indexOf(f), 1);
+    gsap.killTweensOf(f.obj.scale);
+    this.resources.retire(f.obj);
   }
 
   clear() {
     for (const f of [...this.items]) this.remove(f);
+    for (const puff of this.puffs) this.resources.retire(puff.mesh);
+    this.puffs = [];
+    this.time = 0;
+  }
+
+  setCalm(calm: boolean) {
+    this.calm = calm;
+    if (!calm) return;
+    for (const spill of [...this.items]) {
+      if (spill.phase === "return") this.remove(spill);
+      else if (spill.phase !== "rest") this.settle(spill);
+    }
+    for (const puff of this.puffs) this.resources.retire(puff.mesh);
+    this.puffs = [];
+  }
+
+  private settle(spill: Spill) {
+    const landing = spill.bounces === 0;
+    const object = spill.obj;
+    if (spill.phase === "air") object.position.addScaledVector(spill.vel.clone().setY(0), 0.3);
+    object.position.y = this.ground.height(object.position.x, object.position.z) + 0.02;
+    object.rotation.set(snap(object.rotation.x), object.rotation.y, snap(object.rotation.z));
+    object.scale.setScalar(1);
+    spill.phase = "rest";
+    spill.marker.visible = true;
+    if (landing) this.onLand(spill.id);
+    this.step(spill, 0);
+  }
+
+  dispose() {
+    this.clear();
+    this.onLand = () => {};
   }
 
   puff(at: THREE.Vector3, n = 6) {
+    if (this.calm) return;
     for (let i = 0; i < n; i++) {
       const mesh = new THREE.Mesh(this.puffGeo, this.puffMat.clone());
       mesh.position
         .copy(at)
         .add(new THREE.Vector3((Math.random() - 0.5) * 0.5, 0.05, (Math.random() - 0.5) * 0.5));
       this.group.add(mesh);
+      this.resources.tree(mesh);
       this.puffs.push({ mesh, age: 0 });
     }
   }
 
   update(dt: number) {
-    this.time += dt;
+    if (!this.calm) this.time += dt;
     for (const f of [...this.items]) this.step(f, dt);
     for (let i = this.puffs.length - 1; i >= 0; i--) {
       const p = this.puffs[i];
@@ -125,7 +175,7 @@ export class Spills {
       p.mesh.scale.setScalar(1 + p.age * 3);
       (p.mesh.material as THREE.MeshStandardMaterial).opacity = Math.max(0, 0.7 - p.age * 1.2);
       if (p.age > 0.6) {
-        this.group.remove(p.mesh);
+        this.resources.retire(p.mesh);
         this.puffs.splice(i, 1);
       }
     }
@@ -183,7 +233,7 @@ export class Spills {
         box.max.y + 0.3 + Math.sin(this.time * 4) * 0.06,
         o.position.z,
       );
-      f.marker.rotation.y += dt * 2;
+      if (!this.calm) f.marker.rotation.y += dt * 2;
     } else {
       // Return: an arc from the grass to the top of the stack.
       f.t += dt / 0.55;

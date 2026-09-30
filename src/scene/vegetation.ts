@@ -3,6 +3,7 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { GREEN, LANE, LEDGE, type PathPoint, TRAIL_LENGTH } from "../game/trail";
+import type { SceneAssets } from "./assets";
 import type { Ground } from "./terrain";
 import { loadPbrSet, loadTexture } from "./textures";
 import { buildTreeVariant, treeMaterials } from "./trees";
@@ -159,13 +160,14 @@ export function leafDome(radius: number, cards: number) {
 }
 
 /** A Poly Haven scan's own maps (colour with alpha, normal, roughness), swaying in the wind. */
-async function scanMaterial(id: string, height: number, stiffness = 1) {
+async function scanMaterial(id: string, height: number, stiffness = 1, assets?: SceneAssets) {
   const base = `textures/veg/${id}/${id}`;
   const [map, normalMap, roughnessMap] = await Promise.all([
-    loadTexture(`${base}_diff.webp`, true),
-    loadTexture(`${base}_nor.webp`, false),
-    loadTexture(`${base}_arm.webp`, false),
+    loadTexture(`${base}_diff.webp`, true, assets),
+    loadTexture(`${base}_nor.webp`, false, assets),
+    loadTexture(`${base}_arm.webp`, false, assets),
   ]);
+  assets?.assertAlive();
   const mat = new THREE.MeshStandardMaterial({
     map,
     normalMap,
@@ -177,13 +179,19 @@ async function scanMaterial(id: string, height: number, stiffness = 1) {
   });
   // Soft blade edges under MSAA (the high tier); a plain cut-out otherwise.
   mat.alphaToCoverage = true;
+  assets?.resources.material(mat);
   return swaying(mat, height, stiffness);
 }
 
-async function loadGlb(url: string) {
+async function loadGlb(url: string, assets?: SceneAssets) {
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
-  const gltf = await loader.loadAsync(`${import.meta.env.BASE_URL}${url}`);
+  const job = loader.loadAsync(`${import.meta.env.BASE_URL}${url}`).then((gltf) => {
+    assets?.resources.tree(gltf.scene);
+    assets?.assertAlive();
+    return gltf;
+  });
+  const gltf = await (assets ? assets.wait(job) : job);
   gltf.scene.updateMatrixWorld(true);
   const meshes: THREE.Mesh[] = [];
   gltf.scene.traverse((o) => {
@@ -192,6 +200,7 @@ async function loadGlb(url: string) {
   // Bake node transforms and sit each piece on its own base at the origin.
   return meshes.map((m) => {
     const g = m.geometry.clone().applyMatrix4(m.matrixWorld);
+    assets?.resources.own(g);
     g.computeBoundingBox();
     const b = g.boundingBox as THREE.Box3;
     g.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
@@ -229,7 +238,12 @@ function scanned(
 /** Near-path scanned grass, which the frame-time governor may thin on a slow GPU. */
 export const thinGrass: THREE.InstancedMesh[] = [];
 
-export async function buildVegetation(ground: Ground, path: readonly PathPoint[], mobile: boolean) {
+export async function buildVegetation(
+  ground: Ground,
+  path: readonly PathPoint[],
+  mobile: boolean,
+  assets?: SceneAssets,
+) {
   const group = new THREE.Group();
   const k = mobile ? 0.4 : 1;
   const onTrail = (s: Spot) => s.d < TRAIL_LENGTH + 2;
@@ -240,24 +254,25 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
 
   const [grassTex, shrubTex, bark, rocks, dandelions, clumps, tufts2, sorrel, ferns, heliophila] =
     await Promise.all([
-      loadTexture("textures/grass_medium_02/grass_medium_02_cards.webp", true),
-      loadTexture("textures/shrub_02/shrub_02_cards.webp", true),
-      loadPbrSet("bark_brown_02"),
-      loadGlb("models/rock_moss_set_01.glb"),
-      loadGlb("models/dandelion_01.glb"),
-      loadGlb("models/veg/grass_medium_02.glb"),
-      loadGlb("models/veg/grass_bermuda_01.glb"),
-      loadGlb("models/veg/shrub_sorrel_01.glb"),
-      loadGlb("models/veg/fern_02.glb"),
-      loadGlb("models/veg/flower_heliophila.glb"),
+      loadTexture("textures/grass_medium_02/grass_medium_02_cards.webp", true, assets),
+      loadTexture("textures/shrub_02/shrub_02_cards.webp", true, assets),
+      loadPbrSet("bark_brown_02", assets),
+      loadGlb("models/rock_moss_set_01.glb", assets),
+      loadGlb("models/dandelion_01.glb", assets),
+      loadGlb("models/veg/grass_medium_02.glb", assets),
+      loadGlb("models/veg/grass_bermuda_01.glb", assets),
+      loadGlb("models/veg/shrub_sorrel_01.glb", assets),
+      loadGlb("models/veg/fern_02.glb", assets),
+      loadGlb("models/veg/flower_heliophila.glb", assets),
     ]);
   const [clumpMat, tuftMat, sorrelMat, fernMat, flowerMat] = await Promise.all([
-    scanMaterial("grass_medium_02", 0.45),
-    scanMaterial("grass_bermuda_01", 0.2),
-    scanMaterial("shrub_sorrel_01", 0.3),
-    scanMaterial("fern_02", 0.6, 0.6),
-    scanMaterial("flower_heliophila", 0.5),
+    scanMaterial("grass_medium_02", 0.45, 1, assets),
+    scanMaterial("grass_bermuda_01", 0.2, 1, assets),
+    scanMaterial("shrub_sorrel_01", 0.3, 1, assets),
+    scanMaterial("fern_02", 0.6, 0.6, assets),
+    scanMaterial("flower_heliophila", 0.5, 1, assets),
   ]);
+  assets?.assertAlive();
   const meadowTint = () =>
     col.setHSL(0.22 + rand() * 0.05, 0.12 + rand() * 0.18, 0.78 + rand() * 0.22);
   const green = (s: Spot) => s.pond > 1.15 && !(s.d > TRAIL_LENGTH - 3.5 && s.dist < 4.2);
@@ -489,5 +504,6 @@ export async function buildVegetation(ground: Ground, path: readonly PathPoint[]
     });
     group.add(trunk, crown);
   });
+  assets?.resources.tree(group);
   return group;
 }

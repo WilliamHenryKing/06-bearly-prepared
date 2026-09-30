@@ -3,12 +3,13 @@ import type { RunEvent, RunState } from "../game/run";
 import type { TeaOutcome } from "../game/tea";
 import { GREEN, gustAt, LEDGE, TRAIL_LENGTH } from "../game/trail";
 import { POND } from "../scene/pond";
-import { sound } from "./sound";
+import { type Sound, sound } from "./sound";
 
 // Decides what is heard: footsteps from the walk cycle, creaks when the load starts to slide,
 // the thump of every spill, wind that swells before each gust, and the tea being unpacked.
 
 export class SoundCues {
+  constructor(private audio: Sound = sound) {}
   private lastWorst = 0;
   private creakCool = 0;
   private teaClock = -1;
@@ -17,6 +18,9 @@ export class SoundCues {
   private pingIn = 1;
 
   reset() {
+    this.audio.cancelPending();
+    this.creakCool = 0;
+    this.pingIn = 1;
     this.teaClock = -1;
     this.silence = false;
     this.lastWorst = 0;
@@ -24,39 +28,40 @@ export class SoundCues {
 
   events(events: RunEvent[], s: RunState) {
     for (const e of events) {
-      if (e.type === "drop") sound.play("cloth", { gain: 0.7, pan: e.side * 0.6 });
+      if (e.type === "drop") this.audio.play("cloth", { gain: 0.7, pan: e.side * 0.6 });
       else if (e.type === "topple") {
-        sound.play("topple", { gain: 1, pan: e.side * 0.4 });
-        sound.play("cloth", { gain: 0.6, delay: 1.1 });
+        this.audio.play("topple", { gain: 1, pan: e.side * 0.4 });
+        this.audio.play("cloth", { gain: 0.6, delay: 1.1 });
       } else if (e.type === "log") {
-        sound.play("log", { gain: 0.55 + 0.2 * Math.min(1, s.speed), pan: e.lurch * 0.3 });
-        sound.play("creak", { gain: 0.35, pan: e.lurch * 0.5, delay: 0.08 });
+        this.audio.play("log", { gain: 0.55 + 0.2 * Math.min(1, s.speed), pan: e.lurch * 0.3 });
+        this.audio.play("creak", { gain: 0.35, pan: e.lurch * 0.5, delay: 0.08 });
       } else if (e.type === "fetch") {
-        sound.play("cloth", { gain: 0.7 });
-        sound.play(e.id, { gain: 0.5, delay: 0.35 });
-      } else if (e.type === "checkpoint" && e.at > 0) sound.play("flag", { gain: 0.6 });
-      else if (e.type === "jump") sound.whoosh(0, 0.8);
+        this.audio.play("cloth", { gain: 0.7 });
+        this.audio.play(e.id, { gain: 0.5, delay: 0.35 });
+      } else if (e.type === "checkpoint" && e.at > 0) this.audio.play("flag", { gain: 0.6 });
+      else if (e.type === "jump") this.audio.whoosh(0, 0.8);
       else if (e.type === "land") {
-        sound.thud(0, 0.4 + 0.6 * e.strength, 1.1);
-        sound.play("step-grass", { gain: 0.35 + 0.3 * e.strength, rate: 0.85 });
-        if (e.lurch !== 0) sound.play("creak", { gain: 0.35, pan: e.lurch * 0.5, delay: 0.05 });
+        this.audio.thud(0, 0.4 + 0.6 * e.strength, 1.1);
+        this.audio.play("step-grass", { gain: 0.35 + 0.3 * e.strength, rate: 0.85 });
+        if (e.lurch !== 0)
+          this.audio.play("creak", { gain: 0.35, pan: e.lurch * 0.5, delay: 0.05 });
       } else if (e.type === "trip") {
-        sound.play("log", { gain: 0.8 });
-        sound.thud(0.18, 1, 0.8);
-        sound.play("topple", { gain: 0.9, delay: 0.15 });
-        sound.play("cloth", { gain: 0.6, delay: 0.5 });
+        this.audio.play("log", { gain: 0.8 });
+        this.audio.thud(0.18, 1, 0.8);
+        this.audio.play("topple", { gain: 0.9, delay: 0.15 });
+        this.audio.play("cloth", { gain: 0.6, delay: 0.5 });
       } else if (e.type === "bump") {
-        sound.play("cloth", { gain: 0.5, pan: e.side * 0.5 });
-        sound.thud(0, 0.35, 1.4);
-        sound.ping(0.15, e.side * 0.6, 1.2);
+        this.audio.play("cloth", { gain: 0.5, pan: e.side * 0.5 });
+        this.audio.thud(0, 0.35, 1.4);
+        this.audio.ping(0.15, e.side * 0.6, 1.2);
       } else if (e.type === "branch") {
-        sound.rustle(0, e.side * 0.6, e.hit ? 1.2 : 0.5);
-        if (e.hit) sound.thud(0.25, 0.5, 2.2);
+        this.audio.rustle(0, e.side * 0.6, e.hit ? 1.2 : 0.5);
+        if (e.hit) this.audio.thud(0.25, 0.5, 2.2);
       } else if (e.type === "goose") {
         if (e.kind === "peck") {
-          sound.honk(0, e.side ? e.side * 0.4 : 0, 0.7);
-          sound.thud(0.05, 0.35, 1.8);
-        } else sound.honk(0, 0, e.kind === "quit" ? 0.8 : 1.1);
+          this.audio.honk(0, e.side ? e.side * 0.4 : 0, 0.7);
+          this.audio.thud(0.05, 0.35, 1.8);
+        } else this.audio.honk(0, 0, e.kind === "quit" ? 0.8 : 1.1);
       }
     }
   }
@@ -66,14 +71,14 @@ export class SoundCues {
     if (s.phase !== "hiking") return;
     const deck = s.d > TRAIL_LENGTH - 2;
     if (splash) {
-      sound.play("splash", {
+      this.audio.play("splash", {
         gain: 0.3 + 0.35 * strength,
         rate: 0.9 + Math.random() * 0.2,
         pan: side * 0.2,
       });
       return;
     }
-    sound.play(deck ? "step-wood" : "step-grass", {
+    this.audio.play(deck ? "step-wood" : "step-grass", {
       gain: 0.2 + 0.25 * strength,
       rate: 1.05 - s.stats.wobble * 0.2,
       pan: side * 0.15,
@@ -82,33 +87,33 @@ export class SoundCues {
 
   /** The bear shakes the water off. */
   shake() {
-    sound.play("shake", { gain: 0.7 });
+    this.audio.play("shake", { gain: 0.7 });
   }
 
   /** A spilled item hits the grass. */
   land(id: ItemId) {
-    sound.play(id, { gain: 0.9 });
+    this.audio.play(id, { gain: 0.9 });
   }
 
   arrive(pops: { id: ItemId; delay: number }[], outcome: TeaOutcome) {
     this.teaClock = 0;
     this.silence = outcome.silence;
-    sound.play("jingle-tea", { gain: 0.7, delay: 0.2 });
-    for (const p of pops) sound.play(p.id, { gain: 0.55, delay: p.delay });
+    this.audio.play("jingle-tea", { gain: 0.7, delay: 0.2 });
+    for (const p of pops) this.audio.play(p.id, { gain: 0.55, delay: p.delay });
     const last = pops.reduce((m, p) => Math.max(m, p.delay), 0);
-    if (outcome.arrived.includes("kettle")) sound.whistle(last + 0.8);
-    if (this.silence) sound.play("silence", { gain: 0.8, delay: 1.5 });
+    if (outcome.arrived.includes("kettle")) this.audio.whistle(last + 0.8);
+    if (this.silence) this.audio.play("silence", { gain: 0.8, delay: 1.5 });
   }
 
   frame(s: RunState, dt: number, paused: boolean) {
     if (this.teaClock >= 0) {
       this.teaClock += dt;
       const hush = this.silence && this.teaClock > 1.3 && this.teaClock < 6;
-      sound.setBeds({ music: hush ? 0 : 0.34, birds: 0.4, wind: 0.08, water: 0 }, 0.5);
+      this.audio.setBeds({ music: hush ? 0 : 0.34, birds: 0.4, wind: 0.08, water: 0 }, 0.5);
       return;
     }
     if (s.phase === "packing") {
-      sound.setBeds({ music: 0.3, birds: 0.35, wind: 0.06, water: 0 });
+      this.audio.setBeds({ music: 0.3, birds: 0.35, wind: 0.06, water: 0 });
       return;
     }
 
@@ -116,7 +121,7 @@ export class SoundCues {
     if (s.d > GREEN.from - 8 && s.d < GREEN.to + 4) {
       this.pingIn -= dt;
       if (this.pingIn <= 0) {
-        sound.ping(0, Math.random() * 1.6 - 0.8, 0.45 + Math.random() * 0.4);
+        this.audio.ping(0, Math.random() * 1.6 - 0.8, 0.45 + Math.random() * 0.4);
         this.pingIn = 1.2 + Math.random() * 3;
       }
     }
@@ -132,7 +137,7 @@ export class SoundCues {
       }
     }
     if (worst > 0.3 && this.lastWorst <= 0.3 && this.creakCool === 0) {
-      sound.play("creak", { gain: 0.6, pan: side * 0.7 });
+      this.audio.play("creak", { gain: 0.6, pan: side * 0.7 });
       this.creakCool = 0.8;
     }
     this.lastWorst = worst;
@@ -141,7 +146,7 @@ export class SoundCues {
     const onLedge = s.d >= LEDGE.from && s.d < LEDGE.to;
     const g = onLedge ? gustAt(s.gustClock) : null;
     const wind = onLedge ? 0.22 + (g?.warning ? 0.15 : 0) + (g?.strength ?? 0) * 0.5 : 0.07;
-    sound.setBeds(
+    this.audio.setBeds(
       {
         music: paused ? 0.12 : onLedge ? 0.2 : 0.28,
         birds: onLedge ? 0.15 : 0.35,

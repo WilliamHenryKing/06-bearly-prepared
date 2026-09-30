@@ -50,6 +50,20 @@ const poleMat = brass();
 poleMat.roughness = 0.42;
 poleMat.anisotropy = 0;
 const biscuit = matte(0xdcae6a, 0.8);
+export const propMaterials = [
+  red,
+  blue,
+  dark,
+  cream,
+  wood,
+  greenWood,
+  mustard,
+  shade,
+  brassMat,
+  poleMat,
+  biscuit,
+];
+for (const material of propMaterials) material.userData.keepDetail = true;
 
 function kettle() {
   const g = new THREE.Group();

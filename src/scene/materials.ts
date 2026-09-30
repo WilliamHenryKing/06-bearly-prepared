@@ -98,6 +98,7 @@ const speckle = canvas(128, (g, s) => {
     g.fillRect(rand() * s, rand() * s, 1 + rand() * 1.5, 1 + rand() * 1.5);
   }
 });
+export const sharedTextures = [fibreBump, grain, tartan, speckle];
 
 // Scanned detail maps (see assets.manifest.json) arrive after load; materials made before then
 // are upgraded in place, and anything made later picks them up directly.
@@ -126,7 +127,13 @@ function upgrade(kind: Kind, m: THREE.MeshStandardMaterial) {
 }
 
 function register<T extends THREE.MeshStandardMaterial>(kind: Kind, m: T): T {
-  registry.push({ kind, m });
+  const entry = { kind, m };
+  registry.push(entry);
+  m.addEventListener("dispose", () => {
+    if (m.userData.keepDetail) return;
+    const i = registry.indexOf(entry);
+    if (i >= 0) registry.splice(i, 1);
+  });
   upgrade(kind, m);
   return m;
 }

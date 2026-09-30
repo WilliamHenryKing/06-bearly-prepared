@@ -5,6 +5,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { clone as cloneRig } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { CROWD, walkerAt } from "../game/obstacles";
 import { type PathPoint, pointAt } from "../game/trail";
+import { SceneAssets } from "./assets";
 
 // The village green's crowd: fourteen villagers (Quaternius, CC0) crossing and strolling with
 // their eyes on their phones. Each stands exactly where the rules put them (walkerAt, on the
@@ -182,11 +183,13 @@ export class Crowd {
   readonly group = new THREE.Group();
   readonly ready: Promise<void>;
   private folk: Villager[] = [];
+  private disposed = false;
 
   constructor(
     private path: readonly PathPoint[],
     private ground: (x: number, z: number) => number,
     private calm: boolean,
+    private assets = new SceneAssets(),
   ) {
     this.group.name = "crowd";
     this.ready = this.load();
@@ -196,13 +199,23 @@ export class Crowd {
   private async load() {
     const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
     const base = `${import.meta.env.BASE_URL}models/people/`;
+    const load = (url: string) =>
+      this.assets.wait(
+        loader.loadAsync(url).then((gltf) => {
+          this.assets.resources.tree(gltf.scene);
+          this.assets.assertAlive();
+          return gltf;
+        }),
+      );
     const [anims, ...models] = await Promise.all([
-      loader.loadAsync(`${base}anims.glb`),
-      ...LOOKS.map((n) => loader.loadAsync(`${base}${n}.glb`)),
+      load(`${base}anims.glb`),
+      ...LOOKS.map((n) => load(`${base}${n}.glb`)),
     ]);
+    if (this.disposed) return;
     const clip = (name: string) =>
       anims.animations.find((a) => a.name === name) as THREE.AnimationClip;
     for (const m of models) mergeParts(m.scene);
+    for (const m of models) this.assets.resources.tree(m.scene);
     CROWD.forEach((w, i) => {
       const src = models[w.look % models.length];
       if (!src) return;
@@ -260,6 +273,30 @@ export class Crowd {
         startled: 99,
       });
     });
+    this.assets.resources.tree(this.group);
+  }
+
+  setCalm(calm: boolean) {
+    this.calm = calm;
+  }
+
+  reset() {
+    for (const villager of this.folk) {
+      villager.startled = 99;
+      villager.hit.stop();
+    }
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    for (const villager of this.folk) {
+      villager.mixer.stopAllAction();
+      villager.mixer.uncacheRoot(villager.root);
+    }
+    this.folk = [];
+    const debug = window as unknown as { __CROWD__?: Crowd };
+    if (debug.__CROWD__ === this) delete debug.__CROWD__;
   }
 
   /** A walker the bear bumped into: stagger, look up, then back to the phone. */

@@ -147,6 +147,12 @@ export class Pond {
     for (const r of this.rings) r.z += dt;
   }
 
+  reset() {
+    this.next = 0;
+    this.uniforms.uTime.value = 0;
+    for (const ring of this.rings) ring.set(0, 0, 99, 0);
+  }
+
   private buildSurface() {
     // Concentric rings in the pond's own frame, carrying the water depth for the shader.
     const rings = 14;
@@ -326,6 +332,8 @@ export class Droplets {
 
   clear() {
     this.life.fill(0);
-    this.update(0);
+    this.next = 0;
+    for (let i = 0; i < this.max; i++) this.mesh.setMatrixAt(i, this.m.makeScale(0, 0, 0));
+    this.mesh.instanceMatrix.needsUpdate = true;
   }
 }

@@ -3,6 +3,7 @@ import * as THREE from "three";
 import type { ItemId } from "../game/items";
 import type { TeaOutcome } from "../game/tea";
 import { buildProp, cup, litLamp, plate, spreadBlanket, stove } from "./props";
+import { SceneResources } from "./resources";
 
 // The payoff: at the lookout the bear unpacks exactly what arrived, one prop at a time.
 // Slots are in the bear's local frame (it faces -Z, toward the view).
@@ -36,22 +37,31 @@ export class TeaScene {
   private stream: THREE.Mesh | null = null;
   /** When the kettle tips to pour, seconds after arrival. */
   private pourAt = -1;
+  private calm = false;
+  private tweens: gsap.core.Tween[] = [];
   /** When each unpacked piece appears, for the sound of it landing. */
   pops: { id: ItemId; delay: number }[] = [];
 
+  constructor(private resources = new SceneResources()) {}
+
   clear() {
-    gsap.killTweensOf(this.group.children.map((c) => c.scale));
+    for (const tween of this.tweens) tween.kill();
+    this.tweens = [];
+    for (const child of [...this.group.children]) this.resources.retire(child);
     this.group.clear();
     this.steam = [];
     this.kettle = null;
     this.stream = null;
     this.pourAt = -1;
     this.lampLight = null;
+    this.pops = [];
+    this.time = 0;
   }
 
   /** Lays out the arrival; returns the seat height for the bear. */
   build(outcome: TeaOutcome, calm: boolean): number {
     this.clear();
+    this.calm = calm;
     const has = (id: ItemId) => outcome.arrived.includes(id);
     const pieces: THREE.Object3D[] = [];
     for (const id of ["blanket", "chair", "kettle", "teacups", "lamp"] as ItemId[]) {
@@ -89,6 +99,7 @@ export class TeaScene {
         this.steam.push(m);
         this.group.add(m);
       }
+      puff.dispose();
     }
     this.time = 0;
     this.kettle = pieces.find((o) => o.name === "kettle") ?? null;
@@ -114,25 +125,33 @@ export class TeaScene {
       this.group.add(o);
       if (calm) return;
       o.scale.setScalar(0.001);
-      gsap.to(o.scale, {
-        x: 1,
-        y: 1,
-        z: 1,
-        duration: 0.45,
-        delay: 0.6 + i * 0.28,
-        ease: "back.out(2.2)",
-      });
+      this.tweens.push(
+        gsap.to(o.scale, {
+          x: 1,
+          y: 1,
+          z: 1,
+          duration: 0.45,
+          delay: 0.6 + i * 0.28,
+          ease: "back.out(2.2)",
+        }),
+      );
     });
-    if (this.lampLight)
-      gsap.to(this.lampLight, {
-        intensity: 2.2,
-        duration: 0.4,
-        delay: calm ? 0 : 0.6 + pieces.length * 0.28,
-      });
+    if (this.lampLight && !calm)
+      this.tweens.push(
+        gsap.to(this.lampLight, {
+          intensity: 2.2,
+          duration: 0.4,
+          delay: calm ? 0 : 0.6 + pieces.length * 0.28,
+        }),
+      );
+    if (this.lampLight && calm) this.lampLight.intensity = 2.2;
+    this.resources.tree(this.group);
+    if (calm) this.setCalm(true);
     return has("chair") ? 0.2 : -0.08;
   }
 
   update(dt: number) {
+    if (this.calm) return;
     this.time += dt;
     // Pour: the kettle tips toward the cup beside it, a trickle of tea, then back upright.
     if (this.kettle && this.pourAt >= 0) {
@@ -147,5 +166,21 @@ export class TeaScene {
       m.scale.setScalar(0.6 + k * 1.8);
       (m.material as THREE.MeshStandardMaterial).opacity = 0.45 * (1 - k);
     }
+  }
+
+  /** Finish reveals/pour and hold the steam when the preference changes live. */
+  setCalm(calm: boolean) {
+    this.calm = calm;
+    if (!calm) {
+      for (const steam of this.steam) steam.visible = true;
+      return;
+    }
+    for (const tween of this.tweens) tween.totalProgress(1).kill();
+    this.tweens = [];
+    if (this.kettle) this.kettle.rotation.z = 0;
+    if (this.stream) this.stream.visible = false;
+    if (this.pourAt >= 0) this.time = Math.max(this.time, this.pourAt + 1.8);
+    this.pourAt = -1;
+    for (const steam of this.steam) steam.visible = false;
   }
 }

@@ -83,7 +83,7 @@ export interface RunState {
   bumps: number;
   branchesPassed: number;
   goose: GooseState;
-  /** Taken for good (the goose's biscuits): never fetchable. */
+  /** Taken by the goose: not fetchable, but a fall can restore a flag's saved load. */
   stolen: ItemId[];
   /** Feet above the path, and vertical speed, while jumping. */
   y: number;
@@ -189,6 +189,7 @@ export function movePacked(s: RunState, index: number, dir: 1 | -1): void {
 }
 
 export function startHike(s: RunState): void {
+  if (s.phase !== "packing") return;
   const packed = [...s.packed];
   Object.assign(s, createRun(packed), { phase: "hiking" as Phase });
 }
@@ -199,7 +200,7 @@ export function fetchCost(s: RunState, drop: Dropped): number {
 
 /** Trot back for a dropped item: it returns to the top of the stack after a time cost. */
 export function fetchItem(s: RunState, id: ItemId): boolean {
-  if (s.phase !== "hiking" || s.busy > 0) return false;
+  if (s.phase !== "hiking" || s.busy > 0 || s.airborne) return false;
   const i = s.dropped.findIndex((x) => x.id === id);
   const drop = s.dropped[i];
   if (!drop) return false;
@@ -219,6 +220,8 @@ export const totalTime = (s: RunState) => s.time + s.penalty;
 export function stepRun(s: RunState, input: Input, dt: number): void {
   if (s.phase !== "hiking") return;
   s.time += dt;
+  const jumpPressed = !!input.jump && !s.jumpHeld;
+  s.jumpHeld = !!input.jump;
   if (s.busy > 0) {
     s.busy = Math.max(0, s.busy - dt);
     s.speed = 0;
@@ -226,12 +229,11 @@ export function stepRun(s: RunState, input: Input, dt: number): void {
   }
 
   // A jump starts on the press (not while held); in the air the bear keeps its speed.
-  if (input.jump && !s.jumpHeld && !s.airborne) {
+  if (jumpPressed && !s.airborne) {
     s.airborne = true;
     s.vy = JUMP_SPEED * (1 - 0.18 * s.stats.wobble);
     s.events.push({ type: "jump" });
   }
-  s.jumpHeld = !!input.jump;
   if (!s.airborne) {
     const target = input.walk ? s.stats.maxSpeed : 0;
     s.speed += clamp(target - s.speed, -4 * dt, 2.4 * dt);
@@ -303,7 +305,7 @@ export function stepRun(s: RunState, input: Input, dt: number): void {
   if (branch && prevD < branch.at && s.d >= branch.at) {
     s.branchesPassed += 1;
     let hit: ItemId | null = null;
-    if (branchCatches(branch, s.stats.height, s.balance.tilt)) {
+    if (branchCatches(branch, s.stats.height, s.balance.tilt, s.y)) {
       hit = s.stack[s.stack.length - 1] ?? null;
       if (hit) {
         setStack(s, s.stack.slice(0, -1));
@@ -398,6 +400,13 @@ function fallBack(s: RunState) {
   s.penalty += TOPPLE_PENALTY;
   // Anything lost since the checkpoint comes back: the checkpoint remembers the load.
   const back = s.checkpoint.stack;
+  // A fetched item absent from that saved load must remain in the world after the rewind.
+  for (const id of s.stack) {
+    if (back.includes(id)) continue;
+    s.dropped.push({ id, at: s.d });
+    s.spills += 1;
+    s.events.push({ type: "drop", id, side: Math.sign(s.balance.tilt) || 1 });
+  }
   s.dropped = s.dropped.filter((x) => !back.includes(x.id));
   s.stolen = s.stolen.filter((id) => !back.includes(id));
   setStack(s, [...back]);

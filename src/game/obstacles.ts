@@ -144,10 +144,10 @@ export function stackTop(stackHeight: number, tilt: number) {
 }
 
 /** Whether a branch catches the top of the stack. */
-export function branchCatches(b: Branch, stackHeight: number, tilt: number) {
+export function branchCatches(b: Branch, stackHeight: number, tilt: number, feetHeight = 0) {
   if (stackHeight <= 0) return false;
   const top = stackTop(stackHeight, tilt);
-  return top.y > b.height && b.side * top.x > -BRANCH_REACH;
+  return top.y + feetHeight > b.height && b.side * top.x > -BRANCH_REACH;
 }
 
 // ---- the goose -------------------------------------------------------------------------------

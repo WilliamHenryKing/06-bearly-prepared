@@ -57,13 +57,29 @@ function readMuted() {
   }
 }
 
-class Sound {
+interface Voice {
+  sources: AudioScheduledSourceNode[];
+  nodes: AudioNode[];
+  at: number;
+  loop: boolean;
+}
+
+export class Sound {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private buses: Record<"music" | "birds" | "wind" | "water" | "sfx", GainNode> | null = null;
   private buffers = new Map<string, AudioBuffer>();
   private listeners = new Set<() => void>();
   private beds: BedLevels = { music: 0.3, birds: 0.35, wind: 0.1, water: 0 };
+  private disposed = false;
+  private lifetime = new AbortController();
+  private voices = new Set<Voice>();
+  private visibility = () => {
+    const ctx = this.ctx;
+    if (!ctx || this.disposed || ctx.state === "closed") return;
+    if (document.hidden) void ctx.suspend().catch(() => {});
+    else void ctx.resume().catch(() => {});
+  };
   muted = readMuted();
 
   subscribe = (l: () => void) => {
@@ -74,8 +90,10 @@ class Sound {
 
   /** Call from a user gesture: creates the context and starts loading. */
   unlock() {
+    if (this.disposed) return;
     if (this.ctx) {
-      if (this.ctx.state === "suspended" && !document.hidden) void this.ctx.resume();
+      if (this.ctx.state === "suspended" && !document.hidden)
+        void this.ctx.resume().catch(() => {});
       return;
     }
     const Ctor =
@@ -95,14 +113,13 @@ class Sound {
     };
     this.buses = { music: bus(), birds: bus(), wind: bus(), water: bus(), sfx: bus() };
     this.buses.sfx.gain.value = 0.9;
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) void ctx.suspend();
-      else void ctx.resume();
-    });
+    document.addEventListener("visibilitychange", this.visibility);
     void this.load();
   }
 
   private async load() {
+    const ctx = this.ctx;
+    if (!ctx || this.disposed) return;
     const names = [
       ...Object.entries(BANKS).flatMap(([n, c]) =>
         Array.from({ length: c }, (_, i) => `${n}-${i}`),
@@ -112,9 +129,14 @@ class Sound {
     await Promise.all(
       names.map(async (n) => {
         try {
-          const res = await fetch(`${import.meta.env.BASE_URL}audio/${n}.mp3`);
+          const res = await fetch(`${import.meta.env.BASE_URL}audio/${n}.mp3`, {
+            signal: this.lifetime.signal,
+          });
+          if (!res.ok) return;
           const data = await res.arrayBuffer();
-          const buf = await (this.ctx as AudioContext).decodeAudioData(data);
+          if (this.disposed) return;
+          const buf = await ctx.decodeAudioData(data);
+          if (this.disposed || this.ctx !== ctx) return;
           this.buffers.set(n, buf);
           if (n === "music-picnic") this.loop(n, "music");
           else if (n === "amb-birds") this.loop(n, "birds");
@@ -130,7 +152,7 @@ class Sound {
   private loop(name: string, bus: keyof BedLevels) {
     const ctx = this.ctx;
     const buf = this.buffers.get(name);
-    if (!ctx || !buf || !this.buses) return;
+    if (!ctx || !buf || !this.buses || this.disposed) return;
     const src = ctx.createBufferSource();
     src.buffer = buf;
     src.loop = true;
@@ -138,6 +160,7 @@ class Sound {
     src.loopStart = 0.06;
     src.loopEnd = buf.duration - 0.06;
     src.connect(this.buses[bus]);
+    this.track([src], [src], 0, true);
     src.start(0, 0.06);
     this.applyBeds(1.5);
   }
@@ -172,13 +195,15 @@ class Sound {
     const pan = ctx.createStereoPanner();
     pan.pan.value = Math.max(-1, Math.min(1, o.pan ?? 0));
     src.connect(gain).connect(pan).connect(this.buses.sfx);
-    src.start(ctx.currentTime + (o.delay ?? 0));
+    const at = ctx.currentTime + Math.max(0, o.delay ?? 0);
+    this.track([src], [src, gain, pan], at);
+    src.start(at);
   }
 
   /** A synthesised kettle whistle: a breathy sine that rises and wavers. */
   whistle(delay = 0) {
     const ctx = this.ctx;
-    if (!ctx || !this.buses || this.muted) return;
+    if (!ctx || !this.buses || !this.ready()) return;
     const t = ctx.currentTime + delay;
     const osc = ctx.createOscillator();
     const lfo = ctx.createOscillator();
@@ -195,6 +220,7 @@ class Sound {
     g.gain.setValueAtTime(0.05, t + 1.4);
     g.gain.linearRampToValueAtTime(0, t + 1.9);
     osc.connect(g).connect(this.buses.sfx);
+    this.track([osc, lfo], [osc, lfo, depth, g], t);
     osc.start(t);
     lfo.start(t);
     osc.stop(t + 2);
@@ -225,14 +251,17 @@ class Sound {
     const p = ctx.createStereoPanner();
     p.pan.value = Math.max(-1, Math.min(1, pan));
     let node: AudioNode = osc;
+    const nodes: AudioNode[] = [osc, g, p];
     if (filter) {
       const bq = ctx.createBiquadFilter();
       bq.type = filter.type;
       bq.frequency.value = filter.f;
       bq.Q.value = filter.q;
       node = node.connect(bq);
+      nodes.push(bq);
     }
     node.connect(g).connect(p).connect(this.buses.sfx);
+    this.track([osc], nodes, t);
     osc.start(t);
     osc.stop(t + dur + 0.05);
   }
@@ -260,11 +289,12 @@ class Sound {
     const p = ctx.createStereoPanner();
     p.pan.value = Math.max(-1, Math.min(1, pan));
     src.connect(bq).connect(g).connect(p).connect(this.buses.sfx);
+    this.track([src], [src, bq, g, p], t);
     src.start(t);
   }
 
   private ready() {
-    return this.ctx && this.buses && !this.muted && this.ctx.state === "running";
+    return !this.disposed && this.ctx && this.buses && !this.muted && this.ctx.state === "running";
   }
 
   /** The goose: two nasal blasts, the second lower ("HONK-onk"). */
@@ -337,6 +367,7 @@ class Sound {
   }
 
   setMuted(m: boolean) {
+    if (this.disposed) return;
     this.muted = m;
     try {
       window.localStorage.setItem(MUTE_KEY, m ? "1" : "0");
@@ -351,6 +382,59 @@ class Sound {
   toggleMuted() {
     this.setMuted(!this.muted);
   }
+
+  private track(sources: AudioScheduledSourceNode[], nodes: AudioNode[], at: number, loop = false) {
+    const voice: Voice = { sources, nodes, at, loop };
+    this.voices.add(voice);
+    let remaining = sources.length;
+    for (const source of sources)
+      source.onended = () => {
+        if (--remaining === 0) this.release(voice, false);
+      };
+  }
+
+  private release(voice: Voice, stop: boolean) {
+    if (!this.voices.delete(voice)) return;
+    for (const source of voice.sources) {
+      source.onended = null;
+      if (stop) {
+        try {
+          source.stop();
+        } catch {
+          /* It may already have ended. */
+        }
+      }
+    }
+    for (const node of voice.nodes) node.disconnect();
+  }
+
+  /** Replay cancels future cues while retaining the ambience and sounds already heard. */
+  cancelPending() {
+    const now = this.ctx?.currentTime ?? 0;
+    for (const voice of this.voices) if (!voice.loop && voice.at > now) this.release(voice, true);
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.lifetime.abort();
+    document.removeEventListener("visibilitychange", this.visibility);
+    for (const voice of this.voices) this.release(voice, true);
+    for (const bus of Object.values(this.buses ?? {})) bus.disconnect();
+    this.master?.disconnect();
+    const ctx = this.ctx;
+    this.ctx = this.master = this.buses = null;
+    this.buffers.clear();
+    this.listeners.clear();
+    if (ctx && ctx.state !== "closed") void ctx.close().catch(() => {});
+  }
 }
 
-export const sound = new Sound();
+export let sound = new Sound();
+
+/** Main/HMR owns a fresh context; the HUD reads the current live binding. */
+export function createSound() {
+  sound.dispose();
+  sound = new Sound();
+  return sound;
+}

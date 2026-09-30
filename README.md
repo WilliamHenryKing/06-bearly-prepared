@@ -102,10 +102,10 @@ three.js 0.186 (used directly, no React Three Fiber), React 19, strict TypeScrip
 bun install
 bun run dev      # http://127.0.0.1:4516/
 bun run check    # strict tsc, Biome, bun test, production build into dist/
-bun run e2e      # Playwright: packs a sensible load and walks it to the lookout
+bun run e2e      # Playwright: full hike plus input, touch, motion and startup regressions
 ```
 
-The end-to-end test builds and serves the preview, then drives headless Chromium through the whole hike. Use `E2E_GPU=1 bun run e2e` on a machine with a GPU (about 1.3 minutes); in software rendering the furred bear and scanned meadow run far below real time. It stays out of `bun run check` because it needs a browser; set `PLAYWRIGHT_CHROMIUM` to use a specific Chromium binary.
+The end-to-end suite builds and serves the preview, drives a sensible load through the whole hike and checks held controls, three touch layouts, live motion preferences and startup recovery. Use `E2E_GPU=1 bun run e2e` on a machine with a GPU; set `REQUIRE_REAL_GPU=1` to assert the NVIDIA renderer. Software rendering of the furred bear and scanned meadow runs far below real time. Browser tests stay out of `bun run check`; set `PLAYWRIGHT_CHROMIUM` to use a specific Chromium binary.
 
 For visual work, `lookdev.html` on the dev server is a look-dev harness with the game's exact lighting (the bear on a turntable beside grey and mirror spheres and a colour chart), and `tools/batch/` renders look-dev sheets and deterministic gameplay films on the GPU.
 

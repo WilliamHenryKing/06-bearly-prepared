@@ -16,6 +16,7 @@ export const visualTestEnabled = () =>
 
 export interface VisualApi {
   ready: boolean;
+  dispose(): void;
   bookmarks: string[];
   renderer: string;
   setBookmark(name: string): boolean;
@@ -44,6 +45,12 @@ export interface VisualApi {
     airborne: boolean;
     trips: number;
     bumps: number;
+    logsPassed: number;
+    topples: number;
+    busy: number;
+    stack: string[];
+    packed: string[];
+    dropped: string[];
   };
 }
 
@@ -51,18 +58,33 @@ export function installVisualTest(
   scene: GameScene,
   setRun: (r: RunState) => void,
   getRun: () => RunState,
+  restoreLayout: () => void = () => {},
 ): VisualApi {
   const gl = scene.stage.renderer.getContext();
   const info = gl.getExtension("WEBGL_debug_renderer_info");
+  let disposed = false;
+  visual.frozen = false;
+  visual.step = 0;
   const api: VisualApi = {
     ready: false,
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      api.ready = false;
+      visual.frozen = false;
+      visual.step = 0;
+      for (const waiter of waiters.splice(0)) waiter.done();
+      document.documentElement.classList.remove("visual-test");
+      const host = window as unknown as { __VISUAL_TEST__?: VisualApi };
+      if (host.__VISUAL_TEST__ === api) delete host.__VISUAL_TEST__;
+    },
     bookmarks: Object.keys(BOOKMARKS),
     renderer: String(
       info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
     ),
     setBookmark(name) {
       const b = BOOKMARKS[name];
-      if (!b) return false;
+      if (disposed || !b) return false;
       const r = createRun(b.load);
       startHike(r);
       r.d = b.d;
@@ -71,6 +93,7 @@ export function installVisualTest(
       r.balance.tilt = b.tilt;
       setRun(r);
       scene.reset();
+      scene.stage.camera.zoom = 1;
       scene.setShot(b);
       scene.setGaitPhase(1.1);
       if (b.wet) scene.setWet(...b.wet);
@@ -86,26 +109,34 @@ export function installVisualTest(
       ];
     },
     setWet(line, soak, splash = 0, frizz = 0) {
+      if (disposed) return;
       scene.setWet(line, soak, splash, frizz);
     },
     clearBookmark() {
+      if (disposed) return;
       scene.setShot(null);
       document.documentElement.classList.remove("visual-test");
+      restoreLayout();
     },
     freeze(on = true) {
+      if (disposed) return;
       visual.frozen = on;
     },
     settle(frames = 12) {
-      return new Promise((done) => waiters.push({ n: visual.frames + frames, done }));
+      if (disposed) return Promise.resolve();
+      const count = Number.isFinite(frames) ? Math.max(1, Math.floor(frames)) : 12;
+      return new Promise((done) => waiters.push({ n: visual.frames + count, done }));
     },
     step(dt) {
-      visual.step = dt;
+      if (disposed) return Promise.resolve();
+      visual.step = Number.isFinite(dt) ? Math.min(0.1, Math.max(0, dt)) : 0;
       return new Promise((done) => waiters.push({ n: visual.frames + 1, done }));
     },
     quality() {
       return scene.stage.state;
     },
     hide(roots: number[]) {
+      if (disposed) return [];
       const kids = scene.stage.scene.children;
       for (const i of roots) {
         const o = kids[i];
@@ -114,6 +145,7 @@ export function installVisualTest(
       return kids.map((o, i) => `${i} ${o.name || o.type}`);
     },
     degrade() {
+      if (disposed) return false;
       return scene.stage.degrade();
     },
     census() {
@@ -171,6 +203,12 @@ export function installVisualTest(
         airborne: r.airborne,
         trips: r.trips,
         bumps: r.bumps,
+        logsPassed: r.logsPassed,
+        topples: r.topples,
+        busy: r.busy,
+        stack: [...r.stack],
+        packed: [...r.packed],
+        dropped: r.dropped.map((x) => x.id),
       };
     },
   };

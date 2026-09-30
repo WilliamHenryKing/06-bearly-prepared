@@ -32,7 +32,7 @@ export function TiltMeter({ tilt, lean, safe, limit }: Props) {
   const leanLeft = tilt > 0;
   const label = Math.abs(tilt) < 0.03 ? "level" : tilt > 0 ? "tipping right" : "tipping left";
   return (
-    <div className="patch pointer-events-none flex w-[150px] flex-col items-center px-2 pt-1 pb-1.5 sm:w-[190px]">
+    <div className="tilt-meter patch pointer-events-none flex w-[150px] flex-col items-center px-2 pt-1 pb-1.5 sm:w-[190px]">
       <svg className="h-auto w-full" viewBox="0 0 180 96" role="img" aria-label={`Load ${label}`}>
         <path d={arc(-limit, -safe)} stroke="#d9a441" strokeWidth="12" fill="none" />
         <path d={arc(safe, limit)} stroke="#d9a441" strokeWidth="12" fill="none" />

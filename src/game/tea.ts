@@ -40,7 +40,12 @@ export function teaOutcome(packed: readonly ItemId[], arrived: readonly ItemId[]
   if (arrived.length > 0) {
     if (has("kettle")) lines.push("The kettle sings on its little stove.");
     else lines.push("No kettle. Cold stream water, served with optimism.");
-    if (has("teacups")) lines.push("Tea is poured into a proper cup.");
+    if (has("teacups"))
+      lines.push(
+        has("kettle")
+          ? "Tea is poured into a proper cup."
+          : "Stream water is served in a proper cup.",
+      );
     else if (has("kettle")) lines.push("Tea is sipped straight from the spout. Nobody saw.");
     if (has("chair")) lines.push("The chair unfolds on only the third attempt.");
     if (has("blanket")) lines.push("The blanket is spread with a flourish.");

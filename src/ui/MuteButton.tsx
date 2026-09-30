@@ -3,16 +3,21 @@ import { sound } from "../audio/sound";
 
 // Persistent sound toggle, top-left in every phase. The M key does the same.
 
-export function MuteButton() {
-  const muted = useSyncExternalStore(sound.subscribe, sound.getMuted);
+export function MuteButton({ inline = false }: { inline?: boolean }) {
+  const muted = useSyncExternalStore(sound.subscribe, sound.getMuted, sound.getMuted);
   return (
     <button
       type="button"
       aria-pressed={muted}
+      aria-keyshortcuts="M"
       aria-label={muted ? "Sound off. Turn sound on (M)" : "Sound on. Mute (M)"}
       title={muted ? "Sound off (M)" : "Sound on (M)"}
       onClick={() => sound.toggleMuted()}
-      className="patch pointer-events-auto absolute top-3 left-3 flex h-11 w-11 items-center justify-center mt-[env(safe-area-inset-top)]"
+      className={
+        inline
+          ? "mute-button mute-inline patch pointer-events-auto"
+          : "mute-button patch pointer-events-auto absolute top-3 left-3 flex h-11 w-11 items-center justify-center mt-[env(safe-area-inset-top)]"
+      }
     >
       <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 9h4l5-4v14l-5-4H4z" fill="#3a2a1e" />
@@ -28,6 +33,7 @@ export function MuteButton() {
           />
         )}
       </svg>
+      {inline && <span>{muted ? "Sound off" : "Sound on"}</span>}
     </button>
   );
 }

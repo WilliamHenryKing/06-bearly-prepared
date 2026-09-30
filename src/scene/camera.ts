@@ -28,6 +28,8 @@ export class CameraRig {
   teaTime = 0;
   /** Reduced motion: the title shot holds still and the glide is a cut. */
   reduced = false;
+  /** Aspect of the unobscured play region, supplied by the HUD layout. */
+  viewAspect: number | null = null;
   private titleTime = 0;
   private glide = -1;
   private glideFrom = { pos: new THREE.Vector3(), look: new THREE.Vector3() };
@@ -40,6 +42,17 @@ export class CameraRig {
 
   snap() {
     this.ready = false;
+    this.glide = -1;
+    this.lastMode = null;
+    this.side = 1;
+  }
+
+  setCalm(calm: boolean) {
+    this.reduced = calm;
+    if (calm) {
+      this.glide = -1;
+      this.ready = false;
+    }
   }
 
   update(mode: CameraMode, d: number, loadHeight: number, dt: number, still: boolean) {
@@ -55,7 +68,7 @@ export class CameraRig {
     this.lastMode = mode;
     const here = pointAt(this.path, d);
     const ahead = pointAt(this.path, d + 5);
-    const portrait = this.camera.aspect < 0.8;
+    const portrait = this.viewAspect === null ? this.camera.aspect < 0.8 : this.viewAspect < 0.9;
     const fwd = new THREE.Vector3(-Math.sin(here.heading), 0, -Math.cos(here.heading));
     const right = new THREE.Vector3(Math.cos(here.heading), 0, -Math.sin(here.heading));
     const base = new THREE.Vector3(here.x, here.y, here.z);
@@ -73,7 +86,7 @@ export class CameraRig {
       look.copy(base).setY(here.y + 0.3 + tall * 0.5);
     } else if (mode === "tea") {
       // First watch the bear settle and pour, then drift round behind it as the view opens.
-      const t = this.teaTime;
+      const t = this.reduced ? 0 : this.teaTime;
       const k = t < 4 ? 0 : Math.min(1, (t - 4) / 4);
       const e = k * k * (3 - 2 * k);
       const front = base
@@ -103,7 +116,9 @@ export class CameraRig {
       const toAhead = new THREE.Vector3(ahead.x - here.x, 0, ahead.z - here.z).normalize();
       const dir = fwd.clone().lerp(toAhead, 0.35).normalize();
       const across = new THREE.Vector3(-dir.z, 0, dir.x);
-      this.side += (sideFor(d) - this.side) * Math.min(1, dt * 1.2);
+      this.side = this.reduced
+        ? sideFor(d)
+        : this.side + (sideFor(d) - this.side) * Math.min(1, dt * 1.2);
       const back = (portrait ? 4.3 : 3.4) + loadHeight * 1.1;
       pos
         .copy(base)
@@ -122,7 +137,7 @@ export class CameraRig {
       this.pos.y += Math.sin(k * Math.PI) * 1.5;
       this.look.copy(this.glideFrom.look).lerp(look, k);
       if (this.glide >= OPENING_GLIDE) this.glide = -1;
-    } else if (!this.ready || still) {
+    } else if (!this.ready || still || this.reduced) {
       this.pos.copy(pos);
       this.look.copy(look);
       this.ready = true;
