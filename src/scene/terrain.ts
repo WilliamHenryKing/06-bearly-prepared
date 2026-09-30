@@ -40,17 +40,31 @@ export class Ground {
   }
 
   query(x: number, z: number): GroundQuery {
-    let best = Number.POSITIVE_INFINITY;
+    // The nearest trail point first (squared distances: this runs for every terrain vertex and
+    // every scattered plant, some hundred thousand times while loading)...
+    let bestSq = Number.POSITIVE_INFINITY;
     let near = this.coarse[0] as PathPoint;
+    for (const p of this.coarse) {
+      const dx = x - p.x;
+      const dz = z - p.z;
+      const d2 = dx * dx + dz * dz;
+      if (d2 < bestSq) {
+        bestSq = d2;
+        near = p;
+      }
+    }
+    const best = Math.sqrt(bestSq);
+    // ...then the trail's height, weighted by closeness. Points more than 30 m further than the
+    // nearest carry under e^-12 of its weight, so they are skipped.
+    const reach = (best + 30) * (best + 30);
     let wSum = 0;
     let ySum = 0;
     for (const p of this.coarse) {
-      const d = Math.hypot(x - p.x, z - p.z);
-      if (d < best) {
-        best = d;
-        near = p;
-      }
-      const w = Math.exp(-d / 2.5);
+      const dx = x - p.x;
+      const dz = z - p.z;
+      const d2 = dx * dx + dz * dz;
+      if (d2 > reach) continue;
+      const w = Math.exp(-Math.sqrt(d2) / 2.5);
       wSum += w;
       ySum += w * p.y;
     }

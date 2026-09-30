@@ -364,12 +364,29 @@ export class Stage {
    */
   async precompile(later?: THREE.Object3D) {
     const r = this.renderer;
+    // The post passes' own materials too (GTAO, bloom, SMAA, output): they are not in the
+    // scene, and linking them at the first frame held it for about two seconds.
+    const passes = new THREE.Scene();
+    const quad = new THREE.PlaneGeometry(2, 2);
+    const seen = new Set<THREE.Material>();
+    const add = (value: unknown) => {
+      if (value instanceof THREE.Material && !seen.has(value)) {
+        seen.add(value);
+        passes.add(new THREE.Mesh(quad, value));
+      }
+    };
+    for (const pass of this.composer.passes)
+      for (const value of Object.values(pass)) {
+        if (Array.isArray(value)) value.forEach(add);
+        else add(value);
+      }
     const previous = r.getRenderTarget();
     r.setRenderTarget(this.composer.readBuffer);
-    const jobs = [r.compileAsync(this.scene, this.camera)];
+    const jobs = [r.compileAsync(this.scene, this.camera), r.compileAsync(passes, this.camera)];
     if (later) jobs.push(r.compileAsync(later, this.camera, this.scene));
     r.setRenderTarget(previous);
     await Promise.all(jobs);
+    quad.dispose();
     if (later) this.scene.add(later);
     const culled: THREE.Object3D[] = [];
     this.scene.traverse((o) => {

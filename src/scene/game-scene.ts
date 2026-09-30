@@ -540,8 +540,8 @@ export class GameScene {
     } else this.rig.update(mode, d, s.phase === "tea" ? 0 : s.stats.height, dt, still);
     this.stage.follow(this.bear.root.position);
     // Until the shaders are compiled the arrival veil hides the canvas (its safety reveal comes
-    // at 12 s, and from then on the scene is drawn regardless).
-    if (this.warmed || performance.now() - this.born > 11500) this.stage.render();
+    // at 30 s, and from then on the scene is drawn regardless).
+    if (this.warmed || performance.now() - this.born > 29500) this.stage.render();
     this.lastD = s.d;
   }
 }
