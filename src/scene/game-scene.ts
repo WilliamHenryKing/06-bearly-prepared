@@ -14,6 +14,7 @@ import {
   samplePath,
   TRAIL_LENGTH,
 } from "../game/trail";
+import { batchStatic } from "./batch";
 import { Bear, restPose } from "./bear";
 import { type Bookmark, bookmarkCamera } from "./bookmarks";
 import { CameraRig } from "./camera";
@@ -24,7 +25,8 @@ import { setBakedLand } from "./land";
 import { Landmarks } from "./landmarks";
 import { PALETTE, provideDetail } from "./materials";
 import { Pond } from "./pond";
-import { buildProp } from "./props";
+import { buildProp, cup, plate, spreadBlanket, stove } from "./props";
+import type { QualityTier } from "./quality";
 import { Spills } from "./spills";
 import { Stage } from "./stage";
 import { TeaScene } from "./tea";
@@ -83,13 +85,17 @@ export class GameScene {
   private wade = 0;
   private footfallHandler: ((side: number, strength: number, splash: boolean) => void) | null =
     null;
+  /** The scene is drawn once its shaders are compiled (behind the arrival veil until then). */
+  private warmed = false;
+  private readonly born = performance.now();
 
   constructor(
     canvas: HTMLCanvasElement,
     mobile: boolean,
     private calm: boolean,
+    quality?: QualityTier,
   ) {
-    this.stage = new Stage(canvas, mobile);
+    this.stage = new Stage(canvas, mobile, quality);
     this.bear = new Bear(mobile ? "low" : "high");
     this.path = samplePath();
     this.pond = new Pond(this.path);
@@ -118,7 +124,12 @@ export class GameScene {
     scene.add(this.village.group);
     this.landmarks = new Landmarks(this.path);
     scene.add(this.landmarks.group, this.streaks.group);
-    this.stage.aoHidden.push(this.streaks.group);
+    // The set dressing's still parts, baked into a few meshes per stretch of the walk.
+    batchStatic(dressing.group, dressing.flags);
+    batchStatic(this.village.group, this.village.moving);
+    batchStatic(this.landmarks.group, this.landmarks.moving);
+    // The bunting flutters in its shader, which the AO pre-pass would draw at rest.
+    this.stage.aoHidden.push(this.streaks.group, this.village.bunting);
     this.rig = new CameraRig(this.stage.camera, this.path);
     windUniforms.uSway.value = calm ? 0.25 : 1;
   }
@@ -182,6 +193,14 @@ export class GameScene {
       for (const m of thinGrass) m.count = Math.floor(m.count / 2);
       return true;
     });
+    // Every shader, compiled before the first full frame; the load's props and the tea things
+    // too, so packing and arriving never stall on one.
+    const later = new THREE.Group();
+    for (const id of ["kettle", "teacups", "biscuits", "blanket", "chair", "lamp"] as ItemId[])
+      later.add(buildProp(id));
+    later.add(spreadBlanket(), plate(true), plate(false), cup(), stove());
+    await this.stage.precompile(later);
+    this.warmed = true;
   }
 
   set onFootfall(fn: (side: number, strength: number, splash: boolean) => void) {
@@ -520,7 +539,9 @@ export class GameScene {
       this.stage.camera.lookAt(cam.look);
     } else this.rig.update(mode, d, s.phase === "tea" ? 0 : s.stats.height, dt, still);
     this.stage.follow(this.bear.root.position);
-    this.stage.render();
+    // Until the shaders are compiled the arrival veil hides the canvas (its safety reveal comes
+    // at 12 s, and from then on the scene is drawn regardless).
+    if (this.warmed || performance.now() - this.born > 11500) this.stage.render();
     this.lastD = s.d;
   }
 }

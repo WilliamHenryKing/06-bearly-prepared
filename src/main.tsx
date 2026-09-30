@@ -15,6 +15,7 @@ import {
 import { type TeaOutcome, teaOutcome } from "./game/tea";
 import { worldReady } from "./loader";
 import { GameScene } from "./scene/game-scene";
+import { detectQuality, tierSettings } from "./scene/quality";
 import { type Actions, App } from "./ui/App";
 import { hasSeenHint, markHintSeen } from "./ui/Hint";
 import { bindKeyboard, readInput, releaseAll } from "./ui/input";
@@ -33,7 +34,7 @@ canvas.id = "stage";
 canvas.setAttribute("aria-hidden", "true");
 document.body.prepend(canvas);
 
-const scene = new GameScene(canvas, mobile, calm);
+const scene = new GameScene(canvas, mobile, calm, tierSettings(detectQuality(mobile)));
 let run: RunState = createRun();
 let outcome: TeaOutcome | null = null;
 let hintOpen = false;

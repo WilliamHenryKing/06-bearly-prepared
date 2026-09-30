@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { clone as cloneRig } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { CROWD, walkerAt } from "../game/obstacles";
 import { type PathPoint, pointAt } from "../game/trail";
@@ -91,6 +92,92 @@ function makePhone() {
   return g;
 }
 
+/** One material for the whole crowd: the models' flat colours become vertex colours. */
+const folkMaterial = new THREE.MeshStandardMaterial({
+  vertexColors: true,
+  roughness: 0.5,
+  metalness: 0,
+});
+
+/** A float copy of one of the geometry's attributes (the models' are quantized). */
+function floats(geometry: THREE.BufferGeometry, name: string) {
+  const source = geometry.getAttribute(name);
+  if (!source) return null;
+  const size = source.itemSize;
+  const out = new Float32Array(source.count * size);
+  for (let i = 0; i < source.count; i++)
+    for (let c = 0; c < size; c++) out[i * size + c] = source.getComponent(i, c);
+  return new THREE.BufferAttribute(out, size);
+}
+
+/**
+ * A villager's dozen flat-coloured parts as one skinned mesh (one draw per pass instead of a
+ * dozen), their colours baked into the vertices. The parts share one skeleton; a part bound in
+ * another frame (its inverse bind matrices all offset by one transform) is moved into the
+ * first part's frame. Where each part sits in the model does not matter: attached skinning
+ * cancels the mesh's own transform. Leaves the model as it is if the parts cannot share one
+ * skeleton.
+ */
+function mergeParts(model: THREE.Object3D) {
+  const parts: THREE.SkinnedMesh[] = [];
+  model.traverse((o) => {
+    if ((o as THREE.SkinnedMesh).isSkinnedMesh) parts.push(o as THREE.SkinnedMesh);
+  });
+  const first = parts[0];
+  if (!first?.parent || parts.length < 2) return;
+  const ref = first.skeleton;
+  const toFirst = first.bindMatrix.clone().invert();
+  const geometries: THREE.BufferGeometry[] = [];
+  const check = new THREE.Matrix4();
+  for (const part of parts) {
+    const { skeleton, geometry } = part;
+    const material = part.material as THREE.MeshStandardMaterial;
+    if (
+      Array.isArray(part.material) ||
+      Object.keys(geometry.morphAttributes).length ||
+      skeleton.bones.length !== ref.bones.length ||
+      skeleton.bones.some((bone, k) => bone !== ref.bones[k])
+    )
+      return;
+    const offset = (ref.boneInverses[0] as THREE.Matrix4)
+      .clone()
+      .invert()
+      .multiply(skeleton.boneInverses[0] as THREE.Matrix4);
+    for (let k = 0; k < skeleton.bones.length; k++) {
+      check.multiplyMatrices(ref.boneInverses[k] as THREE.Matrix4, offset);
+      const want = (skeleton.boneInverses[k] as THREE.Matrix4).elements;
+      if (
+        check.elements.some((e, i) => Math.abs(e - (want[i] as number)) > 1e-4 * (1 + Math.abs(e)))
+      )
+        return;
+    }
+    const merged = new THREE.BufferGeometry();
+    for (const name of ["position", "normal", "skinIndex", "skinWeight"]) {
+      const a = floats(geometry, name);
+      if (!a) return;
+      merged.setAttribute(name, a);
+    }
+    const n = geometry.getAttribute("position").count;
+    const colour = material.color ?? new THREE.Color(1, 1, 1);
+    const colours = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) colour.toArray(colours, i * 3);
+    merged.setAttribute("color", new THREE.BufferAttribute(colours, 3));
+    if (geometry.index) merged.setIndex(geometry.index.clone());
+    merged.applyMatrix4(toFirst.clone().multiply(offset).multiply(part.bindMatrix));
+    geometries.push(merged);
+  }
+  const geometry = mergeGeometries(geometries);
+  if (!geometry) return;
+  const mesh = new THREE.SkinnedMesh(geometry, folkMaterial);
+  mesh.name = "villager";
+  mesh.position.copy(first.position);
+  mesh.quaternion.copy(first.quaternion);
+  mesh.scale.copy(first.scale);
+  first.parent.add(mesh);
+  mesh.bind(ref, first.bindMatrix);
+  for (const part of parts) part.removeFromParent();
+}
+
 export class Crowd {
   readonly group = new THREE.Group();
   readonly ready: Promise<void>;
@@ -115,16 +202,18 @@ export class Crowd {
     ]);
     const clip = (name: string) =>
       anims.animations.find((a) => a.name === name) as THREE.AnimationClip;
+    for (const m of models) mergeParts(m.scene);
     CROWD.forEach((w, i) => {
       const src = models[w.look % models.length];
       if (!src) return;
       const root = cloneRig(src.scene);
+      const skins: THREE.SkinnedMesh[] = [];
       root.traverse((o) => {
         const m = o as THREE.Mesh;
         if (m.isMesh) {
           m.castShadow = true;
           m.receiveShadow = true;
-          m.frustumCulled = false;
+          if ((m as THREE.SkinnedMesh).isSkinnedMesh) skins.push(m as THREE.SkinnedMesh);
         }
       });
       // Scale to an adult's height from the bind pose.
@@ -132,6 +221,13 @@ export class Crowd {
       const box = new THREE.Box3().setFromObject(root, true);
       const tall = Math.max(0.01, box.max.y - box.min.y);
       root.scale.multiplyScalar((HEIGHTS[i % HEIGHTS.length] as number) / tall);
+      // Culled like anything else, in a sphere taken from the bind pose with room for a
+      // stagger or an outstretched arm (it is never recomputed).
+      root.updateMatrixWorld(true);
+      for (const m of skins) {
+        m.computeBoundingSphere();
+        (m.boundingSphere as THREE.Sphere).radius *= 1.3;
+      }
       // The pose offsets below are in metres for a 1.75 m adult.
       root.userData.baseScale = root.scale.x * (1.75 / (HEIGHTS[i % HEIGHTS.length] as number));
       const bone = (name: string) => (root.getObjectByName(name) as THREE.Bone | undefined) ?? null;

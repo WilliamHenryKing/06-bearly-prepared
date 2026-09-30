@@ -3,8 +3,10 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { type QualityTier, TIERS } from "./quality";
 import {
   EnvironmentBaker,
   hazeRadiance,
@@ -29,6 +31,32 @@ const FOG_SCALE = 900;
 const SHADOW_RADIUS = 9;
 
 export type Tier = "high" | "low";
+
+/**
+ * Zeroes NaN and infinity (all exponent bits set: immune to fast-math) and caps HDR values
+ * before bloom. Some GPUs (Apple's) make NaN where others quietly don't, and bloom's blur
+ * would spread one bad pixel over the whole frame.
+ */
+const FiniteShader = {
+  name: "FiniteShader",
+  uniforms: { tDiffuse: { value: null } },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    varying vec2 vUv;
+    float finite(float x) {
+      return (floatBitsToUint(x) & 0x7f800000u) == 0x7f800000u ? 0.0 : clamp(x, 0.0, 16384.0);
+    }
+    void main() {
+      vec4 c = texture2D(tDiffuse, vUv);
+      gl_FragColor = vec4(finite(c.r), finite(c.g), finite(c.b), 1.0);
+    }`,
+};
 
 let fogPatched = false;
 /**
@@ -104,9 +132,12 @@ export class Stage {
   /** Extra quality steps between dropping GTAO and dropping resolution (false when spent). */
   degradeSteps: (() => boolean)[] = [];
   tier: Tier;
+  readonly quality: QualityTier;
   private keyLux: number;
   private shift = { x: 0, y: 0 };
   private pixelRatio: number;
+  /** Resolution scale the frame-time governor may lower (to 0.6), on top of the pixel budget. */
+  private renderScale = 1;
   /** Toward the sun (unit). */
   readonly sunDir = new THREE.Vector3();
   private baker: EnvironmentBaker;
@@ -114,7 +145,15 @@ export class Stage {
   width = 1;
   height = 1;
 
-  constructor(canvas: HTMLCanvasElement, mobile: boolean) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    mobile: boolean,
+    quality: QualityTier = {
+      quality: mobile ? "low" : "high",
+      ...TIERS[mobile ? "low" : "high"],
+    },
+  ) {
+    this.quality = quality;
     {
       const sky = celestial(HOUR);
       const s = sky.sun.direction;
@@ -134,7 +173,7 @@ export class Stage {
       powerPreference: "high-performance",
       stencil: false,
     });
-    this.pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    this.pixelRatio = Math.min(window.devicePixelRatio || 1, quality.maxPixelRatio);
     this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.toneMapping = THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = 1;
@@ -159,7 +198,7 @@ export class Stage {
     this.key.color.setRGB(...sky.sunColour);
     this.key.intensity = this.keyLux;
     this.key.castShadow = true;
-    const size = mobile ? 1024 : 2048;
+    const size = quality.shadow;
     this.key.shadow.mapSize.set(size, size);
     const sc = this.key.shadow.camera;
     sc.left = sc.bottom = -SHADOW_RADIUS;
@@ -180,10 +219,10 @@ export class Stage {
       3.912 / VISIBILITY,
     );
 
-    // Post: HDR (MSAA on the high tier) → GTAO → thresholded bloom → OutputPass → SMAA.
+    // Post: HDR (MSAA on the high tier) → GTAO → finite → thresholded bloom → OutputPass → SMAA.
     const target = new THREE.WebGLRenderTarget(1, 1, {
       type: THREE.HalfFloatType,
-      samples: this.tier === "high" ? 4 : 0,
+      samples: quality.msaa,
     });
     this.composer = new EffectComposer(this.renderer, target);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
@@ -229,8 +268,9 @@ export class Stage {
         shadows.autoUpdate = auto;
       }
     }) as GTAOPass["render"];
-    this.ao.enabled = this.tier === "high";
+    this.ao.enabled = quality.ao;
     this.composer.addPass(this.ao);
+    this.composer.addPass(new ShaderPass(FiniteShader));
     // Glare only from energy above a high threshold: the lit lamp and the sun's glints.
     this.bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.12, 0.2, 2.2);
     this.composer.addPass(this.bloom);
@@ -269,27 +309,94 @@ export class Stage {
     this.applyView();
   }
 
-  /** Drop to the lighter tier (no GTAO, lower resolution) when frames run long. */
+  /**
+   * One step lighter when frames run long: GTAO, then the scene's own steps (fur, grass), then
+   * multisampling (SMAA still smooths edges), then resolution: device pixels down to one per
+   * CSS pixel, then down to 60 % of that in tenths.
+   */
   degrade() {
     if (this.ao.enabled) {
       this.ao.enabled = false;
       return true;
     }
     for (const step of this.degradeSteps) if (step()) return true;
+    const targets = [this.composer.renderTarget1, this.composer.renderTarget2];
+    if (targets.some((t) => t.samples > 0)) {
+      for (const t of targets) {
+        t.samples = 0;
+        t.dispose();
+      }
+      return true;
+    }
     if (this.pixelRatio > 1) {
       this.pixelRatio = 1;
+      this.resize(this.width, this.height);
+      return true;
+    }
+    if (this.renderScale > 0.65) {
+      this.renderScale = Math.max(0.6, this.renderScale - 0.1);
       this.resize(this.width, this.height);
       return true;
     }
     return false;
   }
 
+  /** Where the frame-time governor has got to, for evidence and tests. */
+  get state() {
+    return {
+      quality: this.quality.quality,
+      ao: this.ao.enabled,
+      msaa: this.composer.renderTarget1.samples,
+      pixelRatio: +this.renderer.getPixelRatio().toFixed(3),
+      renderScale: +this.renderScale.toFixed(2),
+    };
+  }
+
+  /**
+   * Compile every shader the scene needs before its first full frame: in parallel where the
+   * browser allows (KHR_parallel_shader_compile), and for the HDR target the scene pass draws
+   * into, whose programs differ from on-screen ones (no tone mapping, linear output). `later`
+   * holds things that join the scene in play (the load's props), compiled against its lights.
+   * Then everything is drawn once with culling off, so the driver finishes each program for the
+   * vertex layouts, passes and targets it will really meet (ANGLE builds its D3D shaders at the
+   * first draw), while the arrival veil still hides the canvas: nothing stalls later, when a
+   * villager first walks into view.
+   */
+  async precompile(later?: THREE.Object3D) {
+    const r = this.renderer;
+    const previous = r.getRenderTarget();
+    r.setRenderTarget(this.composer.readBuffer);
+    const jobs = [r.compileAsync(this.scene, this.camera)];
+    if (later) jobs.push(r.compileAsync(later, this.camera, this.scene));
+    r.setRenderTarget(previous);
+    await Promise.all(jobs);
+    if (later) this.scene.add(later);
+    const culled: THREE.Object3D[] = [];
+    this.scene.traverse((o) => {
+      if (o.frustumCulled) {
+        o.frustumCulled = false;
+        culled.push(o);
+      }
+    });
+    this.composer.render();
+    for (const o of culled) o.frustumCulled = true;
+    if (later) {
+      this.scene.remove(later);
+      later.traverse((o) => {
+        (o as THREE.Mesh).geometry?.dispose();
+      });
+    }
+  }
+
   resize(w: number, h: number) {
     this.width = Math.max(1, w);
     this.height = Math.max(1, h);
-    this.renderer.setPixelRatio(this.pixelRatio);
+    // Within the tier's pixel budget (a high-density screen need not draw every device pixel).
+    const budget = Math.sqrt(this.quality.pixelBudget / (this.width * this.height));
+    const ratio = Math.min(this.pixelRatio, budget) * this.renderScale;
+    this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(this.width, this.height, false);
-    this.composer.setPixelRatio(this.pixelRatio);
+    this.composer.setPixelRatio(ratio);
     this.composer.setSize(this.width, this.height);
     this.camera.aspect = this.width / this.height;
     this.camera.fov = this.camera.aspect < 0.8 ? 58 : 42;

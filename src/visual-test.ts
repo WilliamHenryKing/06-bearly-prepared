@@ -28,6 +28,14 @@ export interface VisualApi {
   settle(frames?: number): Promise<void>;
   /** While frozen, advance the next frame by dt seconds (films step time deterministically). */
   step(dt: number): Promise<void>;
+  /** The quality tier and how far the frame-time governor has stepped it down. */
+  quality(): Record<string, unknown>;
+  /** Hide scene roots by index, to measure what each costs; returns the roots. */
+  hide(roots: number[]): string[];
+  /** Take one governor step down, as a slow frame run would (false when nothing is left). */
+  degrade(): boolean;
+  /** Draw calls per frame by what draws them (visible meshes, points and lines), heaviest first. */
+  census(): { draws: number; top: [string, number, number][]; roots: [string, number][] };
   /** The hike so far: where the bear is and how it is going. */
   run(): {
     phase: string;
@@ -93,6 +101,66 @@ export function installVisualTest(
     step(dt) {
       visual.step = dt;
       return new Promise((done) => waiters.push({ n: visual.frames + 1, done }));
+    },
+    quality() {
+      return scene.stage.state;
+    },
+    hide(roots: number[]) {
+      const kids = scene.stage.scene.children;
+      for (const i of roots) {
+        const o = kids[i];
+        if (o) o.visible = false;
+      }
+      return kids.map((o, i) => `${i} ${o.name || o.type}`);
+    },
+    degrade() {
+      return scene.stage.degrade();
+    },
+    census() {
+      // Each visible drawable costs one draw per material group; name it by the nearest named
+      // ancestor so a family of meshes sums together.
+      const byName = new Map<string, [number, number]>();
+      const byRoot = new Map<string, number>();
+      const top = scene.stage.scene;
+      let draws = 0;
+      scene.stage.scene.traverseVisible((o) => {
+        const m = o as unknown as {
+          isMesh?: boolean;
+          isPoints?: boolean;
+          isLine?: boolean;
+          material?: unknown;
+          geometry?: { groups: unknown[] };
+        };
+        if (!(m.isMesh || m.isPoints || m.isLine)) return;
+        const n = Array.isArray(m.material) ? (m.geometry?.groups.length ?? 1) : 1;
+        let p: typeof o | null = o;
+        while (p && !p.name) p = p.parent;
+        const mat = (Array.isArray(m.material) ? m.material[0] : m.material) as
+          | { name?: string; type?: string }
+          | undefined;
+        const geo = m.geometry as unknown as {
+          type?: string;
+          attributes?: { position?: { count: number } };
+        };
+        const key =
+          p?.name ||
+          `${o.type} · ${mat?.name || mat?.type} · ${geo?.type} ${geo?.attributes?.position?.count ?? 0}v`;
+        const row = byName.get(key) ?? [0, 0];
+        row[0] += n;
+        row[1] += 1;
+        byName.set(key, row);
+        let r: typeof o = o;
+        while (r.parent && r.parent !== top) r = r.parent;
+        const where = `${top.children.indexOf(r)} ${r.name || r.type}`;
+        byRoot.set(where, (byRoot.get(where) ?? 0) + n);
+        draws += n;
+      });
+      const heaviest = [...byName.entries()]
+        .map(([k, [d, c]]) => [k, d, c] as [string, number, number])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 25);
+      const roots = [...byRoot.entries()].sort((a, b) => b[1] - a[1]);
+      return { draws, top: heaviest, roots };
     },
     run() {
       const r = getRun();

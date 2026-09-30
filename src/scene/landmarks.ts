@@ -171,6 +171,11 @@ export class Landmarks {
     g.add(mast);
   }
 
+  /** What moves once built (kept out of the static batch). */
+  get moving(): THREE.Object3D[] {
+    return [this.sock];
+  }
+
   /** Point the windsock with the wind; `wind` is signed strength toward the walker's right. */
   update(wind: number, time: number, calm: boolean) {
     const target = wind >= 0 ? 0 : Math.PI;

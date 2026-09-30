@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { BRANCH_REACH, BRANCHES, GOOSE, type GooseState } from "../game/obstacles";
 import { GREEN, LANE, ORCHARD, type PathPoint, pointAt } from "../game/trail";
 import { paintedWood } from "./materials";
@@ -43,6 +44,41 @@ void loadTexture("textures/bark_brown_02/bark_brown_02_diff.webp", true).then((t
   barkMat.needsUpdate = true;
 });
 const appleMat = new THREE.MeshStandardMaterial({ color: 0xb8231c, roughness: 0.35 });
+const glassMat = new THREE.MeshStandardMaterial({
+  color: 0xfff1c9,
+  emissive: 0xffc46b,
+  emissiveIntensity: 0.4,
+  roughness: 0.2,
+});
+const lineMat = new THREE.MeshStandardMaterial({ color: 0xece4d0, roughness: 0.9 });
+// Every bunting flag is in one mesh, each fluttering about its own point on the line (turned
+// about x in the shader, as each flag's own rotation.x used to be).
+const flutter = { uTime: { value: 0 }, uFlap: { value: 0.18 } };
+const flagMat = new THREE.MeshStandardMaterial({
+  roughness: 0.8,
+  side: THREE.DoubleSide,
+  vertexColors: true,
+});
+flagMat.onBeforeCompile = (shader) => {
+  Object.assign(shader.uniforms, flutter);
+  shader.vertexShader = shader.vertexShader
+    .replace(
+      "#include <common>",
+      "#include <common>\nuniform float uTime; uniform float uFlap; attribute vec4 aPivot;",
+    )
+    .replace(
+      "#include <beginnormal_vertex>",
+      `#include <beginnormal_vertex>
+      float flap = sin(uTime * 3.0 + aPivot.w) * uFlap;
+      mat3 flapTurn = mat3(1.0, 0.0, 0.0, 0.0, cos(flap), sin(flap), 0.0, -sin(flap), cos(flap));
+      objectNormal = flapTurn * objectNormal;`,
+    )
+    .replace(
+      "#include <begin_vertex>",
+      "#include <begin_vertex>\ntransformed = aPivot.xyz + flapTurn * (transformed - aPivot.xyz);",
+    );
+};
+flagMat.customProgramCacheKey = () => "bunting";
 
 /** A point beside the path: `side` metres to the walker's right, standing on the ground. */
 function beside(path: readonly PathPoint[], ground: Ground, d: number, side: number) {
@@ -147,15 +183,7 @@ function lamp() {
   pole.position.y = 1.55;
   const head = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.1, 0.34, 6), iron);
   head.position.y = 3.25;
-  const glass = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.09, 0.24, 6),
-    new THREE.MeshStandardMaterial({
-      color: 0xfff1c9,
-      emissive: 0xffc46b,
-      emissiveIntensity: 0.4,
-      roughness: 0.2,
-    }),
-  );
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.09, 0.24, 6), glassMat);
   glass.position.y = 3.22;
   const cap = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.18, 6), iron);
   cap.position.y = 3.5;
@@ -164,8 +192,8 @@ function lamp() {
   return g;
 }
 
-/** Triangular flags on a sagging line from a to b. */
-function bunting(a: THREE.Vector3, b: THREE.Vector3) {
+/** A sagging line from a to b; its triangular flags go into `flags` (see flagMat). */
+function bunting(a: THREE.Vector3, b: THREE.Vector3, flags: THREE.BufferGeometry[]) {
   const g = new THREE.Group();
   const colours = [0xc84b3c, 0xe0b040, 0x3f7fae, 0x5b9a4a, 0xf6eedb];
   const n = Math.max(6, Math.round(a.distanceTo(b) / 0.42));
@@ -178,7 +206,7 @@ function bunting(a: THREE.Vector3, b: THREE.Vector3) {
   }
   const line = new THREE.Mesh(
     new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), n * 2, 0.008, 4, false),
-    new THREE.MeshStandardMaterial({ color: 0xece4d0, roughness: 0.9 }),
+    lineMat,
   );
   g.add(line);
   const tri = new THREE.BufferGeometry().setFromPoints([
@@ -189,19 +217,26 @@ function bunting(a: THREE.Vector3, b: THREE.Vector3) {
   tri.computeVertexNormals();
   const dir = b.clone().sub(a).setY(0).normalize();
   const yaw = Math.atan2(dir.x, dir.z) + Math.PI / 2;
+  const turn = new THREE.Matrix4().makeRotationY(yaw);
   for (let i = 1; i < n; i++) {
-    const flag = new THREE.Mesh(
-      tri,
-      new THREE.MeshStandardMaterial({
-        color: colours[i % colours.length],
-        roughness: 0.8,
-        side: THREE.DoubleSide,
-      }),
+    const at = pts[i] as THREE.Vector3;
+    const flag = tri.clone().applyMatrix4(turn).translate(at.x, at.y, at.z);
+    const colour = new THREE.Color(colours[i % colours.length]);
+    flag.setAttribute(
+      "color",
+      new THREE.Float32BufferAttribute(
+        [0, 1, 2].flatMap(() => colour.toArray()),
+        3,
+      ),
     );
-    flag.position.copy(pts[i] as THREE.Vector3);
-    flag.rotation.y = yaw;
-    flag.userData.phase = i * 0.7;
-    g.add(flag);
+    flag.setAttribute(
+      "aPivot",
+      new THREE.Float32BufferAttribute(
+        [0, 1, 2].flatMap(() => [at.x, at.y, at.z, i * 0.7]),
+        4,
+      ),
+    );
+    flags.push(flag);
   }
   return g;
 }
@@ -418,7 +453,8 @@ class Goose {
 
 export class Village {
   readonly group = new THREE.Group();
-  private flags: THREE.Mesh[] = [];
+  /** Every bunting flag on the green, fluttering in its shader. */
+  readonly bunting: THREE.Mesh;
   private boughs: THREE.Group[] = [];
   private shake: number[] = [];
   private goose = new Goose();
@@ -453,19 +489,22 @@ export class Village {
     ] as const)
       put(bench(), d, side, side > 0 ? Math.PI / 2 : -Math.PI / 2);
     const tops: Record<string, THREE.Vector3> = {};
+    const flags: THREE.BufferGeometry[] = [];
     // Lamps stand well back from the path, clear of the follow camera's swing.
     for (const d of [76, 86, 96]) {
       for (const side of [-3.4, 3.4]) {
         const b = put(lamp(), d, side);
         tops[`${d}:${side}`] = new THREE.Vector3(b.x, b.y + 3.05, b.z);
       }
-      const across = bunting(tops[`${d}:-3.4`] as THREE.Vector3, tops[`${d}:3.4`] as THREE.Vector3);
-      this.group.add(across);
-      across.traverse((o) => {
-        if ((o as THREE.Mesh).isMesh && o.userData.phase !== undefined)
-          this.flags.push(o as THREE.Mesh);
-      });
+      this.group.add(
+        bunting(tops[`${d}:-3.4`] as THREE.Vector3, tops[`${d}:3.4`] as THREE.Vector3, flags),
+      );
     }
+    const merged = mergeGeometries(flags);
+    if (!merged) throw new Error("bunting merge failed");
+    this.bunting = new THREE.Mesh(merged, flagMat);
+    this.bunting.name = "bunting";
+    this.group.add(this.bunting);
 
     // The orchard: a row of apple trees each side, and the five low boughs.
     put(signBoard(["Orchard", "low branches!"], "#8a5a2b"), ORCHARD.from - 3, 1.45);
@@ -503,6 +542,11 @@ export class Village {
       put(gate, d, 1.5, d === LANE.from ? -1.2 : 1.2);
     }
     this.group.add(this.goose.root);
+  }
+
+  /** What moves once built (kept out of the static batch). */
+  get moving(): THREE.Object3D[] {
+    return [this.bunting, ...this.boughs, this.goose.root];
   }
 
   /** A clipped bough: shake it and drop its apple. */
@@ -545,8 +589,8 @@ export class Village {
   update(goose: GooseState, dt: number, calm: boolean) {
     this.time += dt;
     // Bunting flutters.
-    for (const f of this.flags)
-      f.rotation.x = Math.sin(this.time * 3 + (f.userData.phase as number)) * (calm ? 0.05 : 0.18);
+    flutter.uTime.value = this.time;
+    flutter.uFlap.value = calm ? 0.05 : 0.18;
     // Boughs shake after a clip, and sway a little always.
     this.boughs.forEach((b, i) => {
       const k = this.shake[i] as number;
