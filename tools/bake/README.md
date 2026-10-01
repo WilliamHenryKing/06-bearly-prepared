@@ -1,6 +1,12 @@
 # The vista bake
 
-The mountains, valley, lake shore, forests and sky that the bear looks out on are rendered offline on this machine's RTX 2060 and shipped as compact assets in `public/vista/` (about 8 MB). At runtime the game reads these assets. It does not simulate or path-trace anything.
+The mountains, valley, lake shore, forests and sky that the bear looks out on are rendered offline on an RTX 2060 and shipped as compact assets in `public/vista/` (about 8 MB). At runtime the game reads these assets; it does not rerun erosion or path-trace the vista. Gameplay, bear animation, weather responses and interactions still run live.
+
+## When this pipeline is needed
+
+Playing the game, running Vite and checking the TypeScript project do not require Python or CUDA. Use the [main README](../../README.md) for normal development. Rebuild these assets only when changing terrain, the sky or the baked lighting, then inspect the result in the actual trail scene.
+
+The 29 September vista release predates the cinematic guide and deep bug-pass updates. Those later releases reuse the baked landscape and improve runtime rendering, controls and game behaviour. The timings below are recorded workstation observations, not estimates for every GPU.
 
 | Stage | What it does | Where it runs | Time (RTX 2060, i7-10750H) |
 | --- | --- | --- | --- |
@@ -32,3 +38,9 @@ Every GPU stage runs in short kernel launches under the Windows watchdog, paced 
 - It refuses to run with less than 1 GiB of GPU memory free.
 
 Temperatures and memory are logged to `bake/work/thermal.csv`. Only one heavy stage runs at a time.
+
+## Output and provenance
+
+Working grids and render intermediates stay under ignored `bake/work/`; only the processed `public/vista/` outputs belong in a release. Preserve the source parameters and update the asset manifest when rebuilding. Runtime textures and models have their own source and licence records in the project's [credits](../../README.md#credits) and [asset manifest](../../assets.manifest.json).
+
+Before a long bake, recheck available RAM, VRAM and temperature, and use the quick mode to catch parameter or dependency problems. After export, compare the horizon, sunlight, fog and nearby trail against the previous release. The offline bake does not replace the game's unit tests, browser progression checks or visual inspection.
